@@ -293,21 +293,3 @@ This project builds on several key research papers:
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- RocksDB team for the excellent LSM foundation
-- Academic researchers whose work inspired our innovations
-- Rust community for the amazing ecosystem
-- Contributors and early adopters
-
-## 📞 Support
-
-- **Issues**: [GitHub Issues](https://github.com/auradb/auradb/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/auradb/auradb/discussions)
-- **Email**: team@auradb.io
-- **Discord**: [Join our community](https://discord.gg/auradb)
-
----
-
-**AuraDB** - The next generation of high-performance storage engines 🚀
