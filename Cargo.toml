@@ -2,12 +2,14 @@
 name = "auradb"
 version = "0.1.0"
 edition = "2021"
-authors = ["AuraDB Team"]
+authors = ["0xsupremedev <0xsupremedev@gmail.com>"]
 description = "High-performance Rust storage engine with WAL-time KV separation, RL-driven compaction, and learned indexes"
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/auradb/auradb"
-keywords = ["database", "storage", "lsm", "kv-store", "rocksdb"]
-categories = ["database"]
+repository = "https://github.com/0xsupremedev/auradb"
+documentation = "https://github.com/0xsupremedev/auradb"
+homepage = "https://github.com/0xsupremedev/auradb"
+keywords = ["database", "storage", "lsm", "kv-store", "rocksdb", "wal", "compaction", "learned-indexes"]
+categories = ["database", "data-structures", "storage"]
 
 [dependencies]
 # Core async runtime
