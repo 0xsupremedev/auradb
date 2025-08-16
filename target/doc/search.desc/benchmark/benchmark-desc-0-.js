@@ -1,0 +1,1 @@
+searchState.loadedDescShard("benchmark", 0, "Benchmark configuration\nBatch size for batch operations\nDatabase path\nReturns the argument unchanged.\nCalls <code>U::from(self)</code>.\nKey size in bytes\nWhether to test large-value separation\nNumber of operations\nValue size in bytes\nWorkload type (random, sequential)")

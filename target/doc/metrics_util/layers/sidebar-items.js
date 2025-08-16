@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":["Fanout","FanoutBuilder","Prefix","PrefixLayer","Stack"],"trait":["Layer"]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["information","is_hidden","typ"],"struct":["Information","Type"]};

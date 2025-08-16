@@ -1,0 +1,1 @@
+searchState.loadedDescShard("ciborium_io", 0, "Simple, Low-level I/O traits\nThe error type\nThe error type\nA trait indicating a type that can read bytes\nA trait indicating a type that can write bytes\nFlushes all output\nReads exactly <code>data.len()</code> bytes or fails\nWrites all bytes from <code>data</code> or fails")

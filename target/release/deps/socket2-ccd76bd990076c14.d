@@ -1,0 +1,11 @@
+C:\Users\ashut\OneDrive\Documents\auradb\target\release\deps\socket2-ccd76bd990076c14.d: C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\socket2-0.5.10\src\lib.rs C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\socket2-0.5.10\src\sockaddr.rs C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\socket2-0.5.10\src\socket.rs C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\socket2-0.5.10\src\sockref.rs C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\socket2-0.5.10\src\sys\windows.rs
+
+C:\Users\ashut\OneDrive\Documents\auradb\target\release\deps\libsocket2-ccd76bd990076c14.rlib: C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\socket2-0.5.10\src\lib.rs C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\socket2-0.5.10\src\sockaddr.rs C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\socket2-0.5.10\src\socket.rs C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\socket2-0.5.10\src\sockref.rs C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\socket2-0.5.10\src\sys\windows.rs
+
+C:\Users\ashut\OneDrive\Documents\auradb\target\release\deps\libsocket2-ccd76bd990076c14.rmeta: C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\socket2-0.5.10\src\lib.rs C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\socket2-0.5.10\src\sockaddr.rs C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\socket2-0.5.10\src\socket.rs C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\socket2-0.5.10\src\sockref.rs C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\socket2-0.5.10\src\sys\windows.rs
+
+C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\socket2-0.5.10\src\lib.rs:
+C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\socket2-0.5.10\src\sockaddr.rs:
+C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\socket2-0.5.10\src\socket.rs:
+C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\socket2-0.5.10\src\sockref.rs:
+C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\socket2-0.5.10\src\sys\windows.rs:

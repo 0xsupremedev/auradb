@@ -1,0 +1,38 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="This crate provides a direct port of the Golang DDSketch implementation to Rust. All efforts have been made to keep this as close to the original implementation as possible, with a few tweaks to get closer to idiomatic Rust."><title>sketches_ddsketch - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-84e720fa.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="sketches_ddsketch" data-themes="" data-resource-suffix="" data-rustdoc-version="1.89.0 (29483883e 2025-08-04)" data-channel="1.89.0" data-search-js="search-92309212.js" data-settings-js="settings-5514c975.js" ><script src="../static.files/storage-4e99c027.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-fd3af306.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-32bb7600.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../sketches_ddsketch/index.html">sketches_<wbr>ddsketch</a><span class="version">0.2.2</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#usage" title="Usage">Usage</a></li></ul><h3><a href="#structs">Crate Items</a></h3><ul class="block"><li><a href="#structs" title="Structs">Structs</a></li><li><a href="#enums" title="Enums">Enums</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Crate <span>sketches_ddsketch</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/sketches_ddsketch/lib.rs.html#1-53">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>This crate provides a direct port of the <a href="https://github.com/DataDog/sketches-go">Golang</a>
+<a href="https://arxiv.org/pdf/1908.10693.pdf">DDSketch</a> implementation to Rust. All efforts
+have been made to keep this as close to the original implementation as possible, with a few tweaks to
+get closer to idiomatic Rust.</p>
+<h2 id="usage"><a class="doc-anchor" href="#usage">§</a>Usage</h2>
+<p>Add multiple samples to a DDSketch and invoke the <code>quantile</code> method to pull any quantile from
+<em>0.0</em> to <em>1.0</em>.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>sketches_ddsketch::{Config, DDSketch};
+
+<span class="kw">let </span>c = Config::defaults();
+<span class="kw">let </span><span class="kw-2">mut </span>d = DDSketch::new(c);
+
+d.add(<span class="number">1.0</span>);
+d.add(<span class="number">1.0</span>);
+d.add(<span class="number">1.0</span>);
+
+<span class="kw">let </span>q = d.quantile(<span class="number">0.50</span>).unwrap();
+
+<span class="macro">assert!</span>(q &lt; <span class="prelude-val">Some</span>(<span class="number">1.01</span>));
+<span class="macro">assert!</span>(q &gt; <span class="prelude-val">Some</span>(<span class="number">0.99</span>));</code></pre></div>
+<p>Sketches can also be merged.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>sketches_ddsketch::{Config, DDSketch};
+
+<span class="kw">let </span>c = Config::defaults();
+<span class="kw">let </span><span class="kw-2">mut </span>d1 = DDSketch::new(c);
+<span class="kw">let </span><span class="kw-2">mut </span>d2 = DDSketch::new(c);
+
+d1.add(<span class="number">1.0</span>);
+d2.add(<span class="number">2.0</span>);
+d2.add(<span class="number">2.0</span>);
+
+d1.merge(<span class="kw-2">&amp;</span>d2);
+
+<span class="macro">assert_eq!</span>(d1.count(), <span class="number">3</span>);</code></pre></div>
+</div></details><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><dl class="item-table"><dt><a class="struct" href="struct.Config.html" title="struct sketches_ddsketch::Config">Config</a></dt><dd>The configuration struct for constructing a <code>DDSketch</code></dd><dt><a class="struct" href="struct.DDSketch.html" title="struct sketches_ddsketch::DDSketch">DDSketch</a></dt><dd>This struct represents a <a href="https://arxiv.org/pdf/1908.10693.pdf">DDSketch</a></dd></dl><h2 id="enums" class="section-header">Enums<a href="#enums" class="anchor">§</a></h2><dl class="item-table"><dt><a class="enum" href="enum.DDSketchError.html" title="enum sketches_ddsketch::DDSketchError">DDSketch<wbr>Error</a></dt><dd>General error type for DDSketch, represents either an invalid quantile or an
+incompatible merge operation.</dd></dl></section></div></main></body></html>

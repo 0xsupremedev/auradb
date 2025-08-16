@@ -1,0 +1,68 @@
+OUT_DIR = Some(C:\Users\ashut\OneDrive\Documents\auradb\target\debug\build\lz4-sys-9621dd4898ddd513\out)
+TARGET = Some(x86_64-pc-windows-msvc)
+cargo:rerun-if-env-changed=VCINSTALLDIR
+VCINSTALLDIR = None
+cargo:rerun-if-env-changed=VSTEL_MSBuildProjectFullPath
+VSTEL_MSBuildProjectFullPath = None
+cargo:rerun-if-env-changed=VSCMD_ARG_VCVARS_SPECTRE
+VSCMD_ARG_VCVARS_SPECTRE = None
+cargo:rerun-if-env-changed=WindowsSdkDir
+WindowsSdkDir = None
+cargo:rerun-if-env-changed=WindowsSDKVersion
+WindowsSDKVersion = None
+cargo:rerun-if-env-changed=LIB
+LIB = None
+PATH = Some(C:\Users\ashut\OneDrive\Documents\auradb\target\debug\deps;C:\Users\ashut\OneDrive\Documents\auradb\target\debug;C:\Users\ashut\.rustup\toolchains\stable-x86_64-pc-windows-msvc\lib\rustlib\x86_64-pc-windows-msvc\lib;c:\Users\ashut\AppData\Local\Programs\cursor\resources\app\bin;C:\Program Files\Python38\Scripts\;C:\Program Files\Python38\;$($env:PATH);C:\Program Files\Microsoft\jdk-21.0.8.9-hotspot\bin;C:\Users\ashut\OneDrive\Documents\flutter_windows_3.32.8-stable\flutter\bin;C:\Android\cmdline-tools\latest\bin;C:\Android\emulator;C:\Program Files\Git\cmd;C:\Program Files\nodejs\;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0\;C:\WINDOWS\System32\OpenSSH\;$($env:PATH);C:\Program Files\Microsoft\jdk-21.0.8.9-hotspot\bin;C:\Users\ashut\OneDrive\Documents\flutter_windows_3.32.8-stable\flutter\bin;C:\Android\cmdline-tools\latest\bin;C:\Android\emulator;C:\Program Files\Git\cmd;C:\Program Files\nodejs\;C:\Program Files\Google\Chrome\Application;C:\windows\system32;C:\windows;C:\windows\System32\Wbem;C:\windows\System32\WindowsPowerShell\v1.0\;C:\windows\System32\OpenSSH\;C:\Program Files (x86)\NVIDIA Corporation\PhysX\Common;C:\Program Files\NVIDIA Corporation\NVIDIA NvDLIS;C:\Program Files\GitHub CLI\;C:\Users\ashut\.local\share\solana\install\active_release\bin;C:\Users\ashut\.cargo\bin;c:\Users\ashut\AppData\Local\Programs\cursor\resources\app\codeBin;$($env:PATH);C:\Users\ashut\AppData\Roaming\npm;C:\Users\ashut\AppData\Local\Programs\Microsoft VS Code\bin;C:\Users\ashut\AppData\Roaming\Python\Python38\Scripts;C:\Users\ashut\AppData\Local\Programs\cursor\resources\app\bin;C:\Users\ashut\AppData\Local\Programs\Ollama;C:\Users\ashut\.rustup\toolchains\stable-x86_64-pc-windows-msvc\bin)
+cargo:rerun-if-env-changed=INCLUDE
+INCLUDE = None
+HOST = Some(x86_64-pc-windows-msvc)
+cargo:rerun-if-env-changed=CC_x86_64-pc-windows-msvc
+CC_x86_64-pc-windows-msvc = None
+cargo:rerun-if-env-changed=CC_x86_64_pc_windows_msvc
+CC_x86_64_pc_windows_msvc = None
+cargo:rerun-if-env-changed=HOST_CC
+HOST_CC = None
+cargo:rerun-if-env-changed=CC
+CC = None
+cargo:rerun-if-env-changed=CRATE_CC_NO_DEFAULTS
+CRATE_CC_NO_DEFAULTS = None
+CARGO_CFG_TARGET_FEATURE = Some(cmpxchg16b,fxsr,sse,sse2,sse3)
+DEBUG = Some(true)
+cargo:rerun-if-env-changed=CFLAGS
+CFLAGS = None
+cargo:rerun-if-env-changed=HOST_CFLAGS
+HOST_CFLAGS = None
+cargo:rerun-if-env-changed=CFLAGS_x86_64_pc_windows_msvc
+CFLAGS_x86_64_pc_windows_msvc = None
+cargo:rerun-if-env-changed=CFLAGS_x86_64-pc-windows-msvc
+CFLAGS_x86_64-pc-windows-msvc = None
+CARGO_ENCODED_RUSTFLAGS = Some()
+cargo:rerun-if-env-changed=CC_ENABLE_DEBUG_OUTPUT
+lz4.c
+lz4frame.c
+lz4hc.c
+xxhash.c
+exit code: 0
+exit code: 0
+exit code: 0
+exit code: 0
+cargo:rerun-if-env-changed=AR_x86_64-pc-windows-msvc
+AR_x86_64-pc-windows-msvc = None
+cargo:rerun-if-env-changed=AR_x86_64_pc_windows_msvc
+AR_x86_64_pc_windows_msvc = None
+cargo:rerun-if-env-changed=HOST_AR
+HOST_AR = None
+cargo:rerun-if-env-changed=AR
+AR = None
+cargo:rerun-if-env-changed=ARFLAGS
+ARFLAGS = None
+cargo:rerun-if-env-changed=HOST_ARFLAGS
+HOST_ARFLAGS = None
+cargo:rerun-if-env-changed=ARFLAGS_x86_64_pc_windows_msvc
+ARFLAGS_x86_64_pc_windows_msvc = None
+cargo:rerun-if-env-changed=ARFLAGS_x86_64-pc-windows-msvc
+ARFLAGS_x86_64-pc-windows-msvc = None
+cargo:rustc-link-lib=static=lz4
+cargo:rustc-link-search=native=C:\Users\ashut\OneDrive\Documents\auradb\target\debug\build\lz4-sys-9621dd4898ddd513\out
+cargo:root=C:\Users\ashut\OneDrive\Documents\auradb\target\debug\build\lz4-sys-9621dd4898ddd513\out
+cargo:include=C:\Users\ashut\OneDrive\Documents\auradb\target\debug\build\lz4-sys-9621dd4898ddd513\out\include

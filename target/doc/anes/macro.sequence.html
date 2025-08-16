@@ -1,0 +1,76 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Creates an ANSI sequence."><title>sequence in anes - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-84e720fa.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="anes" data-themes="" data-resource-suffix="" data-rustdoc-version="1.89.0 (29483883e 2025-08-04)" data-channel="1.89.0" data-search-js="search-92309212.js" data-settings-js="settings-5514c975.js" ><script src="../static.files/storage-4e99c027.js"></script><script defer src="sidebar-items.js"></script><script defer src="../static.files/main-fd3af306.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-32bb7600.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc macro"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../anes/index.html">anes</a><span class="version">0.1.6</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">sequence</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#examples" title="Examples">Examples</a></li></ul></section><div id="rustdoc-modnav"><h2 class="in-crate"><a href="index.html">In crate anes</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="index.html">anes</a></div><h1>Macro <span class="macro">sequence</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/anes/macros.rs.html#114-182">Source</a> </span></div><pre class="rust item-decl"><code>macro_rules! sequence {
+    (
+        $(#[$meta:meta])*
+        struct $name:ident =&gt; $value:expr
+    ) =&gt; { ... };
+    (
+        $(#[$meta:meta])*
+        enum $name:ident {
+            $(
+                $(#[$variant_meta:meta])*
+                $variant:ident =&gt; $variant_value:expr
+            ),*
+            $(,)?
+        }
+    ) =&gt; { ... };
+    (
+        $(#[$meta:meta])*
+        struct $type:ident(
+            $($fields:ty),*
+            $(,)?
+        )
+        =&gt;
+        $write:expr
+    ) =&gt; { ... };
+}</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Creates an ANSI sequence.</p>
+<p>You can use this macro to create your own ANSI sequence. All <code>anes</code> sequences are
+created with this macro.</p>
+<h2 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h2>
+<p>An unit struct:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>anes::{esc, sequence};
+
+<span class="macro">sequence!</span>(
+  <span class="doccomment">/// Saves the cursor position.    
+  </span><span class="kw">struct </span>SaveCursorPosition =&gt; <span class="macro">esc!</span>(<span class="string">"7"</span>)    
+);
+
+<span class="macro">assert_eq!</span>(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">"{}"</span>, SaveCursorPosition), <span class="string">"\x1B7"</span>);</code></pre></div>
+<p>An enum:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>anes::{csi, sequence};
+
+<span class="macro">sequence!</span>(
+    <span class="doccomment">/// Clears part of the buffer.
+    </span><span class="kw">enum </span>ClearBuffer {
+        <span class="doccomment">/// Clears from the cursor position to end of the screen.
+        </span>Below =&gt; <span class="macro">csi!</span>(<span class="string">"J"</span>),
+        <span class="doccomment">/// Clears from the cursor position to beginning of the screen.
+        </span>Above =&gt; <span class="macro">csi!</span>(<span class="string">"1J"</span>),
+        <span class="doccomment">/// Clears the entire buffer.
+        </span>All =&gt; <span class="macro">csi!</span>(<span class="string">"2J"</span>),
+        <span class="doccomment">/// Clears the entire buffer and all saved lines in the scrollback buffer.
+        </span>SavedLines =&gt; <span class="macro">csi!</span>(<span class="string">"3J"</span>),
+    }
+);
+
+<span class="macro">assert_eq!</span>(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">"{}"</span>, ClearBuffer::Below), <span class="string">"\x1B[J"</span>);
+<span class="macro">assert_eq!</span>(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">"{}"</span>, ClearBuffer::Above), <span class="string">"\x1B[1J"</span>);
+<span class="macro">assert_eq!</span>(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">"{}"</span>, ClearBuffer::All), <span class="string">"\x1B[2J"</span>);
+<span class="macro">assert_eq!</span>(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">"{}"</span>, ClearBuffer::SavedLines), <span class="string">"\x1B[3J"</span>);</code></pre></div>
+<p>A struct:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>anes::{csi, sequence};
+
+<span class="macro">sequence!</span>(
+    <span class="doccomment">/// Moves the cursor to the given location (column, row).
+    ///
+    /// # Notes
+    ///
+    /// Top/left cell is represented as `1, 1`.
+    </span><span class="kw">struct </span>MoveCursorTo(u16, u16) =&gt;
+    |this, f| <span class="macro">write!</span>(f, <span class="macro">csi!</span>(<span class="string">"{};{}H"</span>), this.<span class="number">0</span>, this.<span class="number">1</span>)
+);
+
+<span class="macro">assert_eq!</span>(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">"{}"</span>, MoveCursorTo(<span class="number">10</span>, <span class="number">5</span>)), <span class="string">"\x1B[10;5H"</span>);</code></pre></div>
+</div></details></section></div></main></body></html>

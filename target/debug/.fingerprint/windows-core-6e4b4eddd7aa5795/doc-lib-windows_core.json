@@ -1,0 +1,1 @@
+{"rustc":3062648155896360161,"features":"[\"default\"]","declared_features":"[\"default\", \"implement\"]","target":5074702274061800001,"profile":9102090753619238930,"path":1890127894992170686,"deps":[[14322346790800707264,"windows_targets",false,8651609982094035628]],"local":[{"Precalculated":"0.52.0"}],"rustflags":[],"config":2069994364910194474,"compile_kind":0}

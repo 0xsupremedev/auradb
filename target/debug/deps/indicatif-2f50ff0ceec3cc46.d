@@ -1,0 +1,9 @@
+C:\Users\ashut\OneDrive\Documents\auradb\target\debug\deps\indicatif-2f50ff0ceec3cc46.d: C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\indicatif-0.11.0\src\lib.rs C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\indicatif-0.11.0\src\format.rs C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\indicatif-0.11.0\src\progress.rs C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\indicatif-0.11.0\src\style.rs C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\indicatif-0.11.0\src\utils.rs
+
+C:\Users\ashut\OneDrive\Documents\auradb\target\debug\deps\libindicatif-2f50ff0ceec3cc46.rmeta: C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\indicatif-0.11.0\src\lib.rs C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\indicatif-0.11.0\src\format.rs C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\indicatif-0.11.0\src\progress.rs C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\indicatif-0.11.0\src\style.rs C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\indicatif-0.11.0\src\utils.rs
+
+C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\indicatif-0.11.0\src\lib.rs:
+C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\indicatif-0.11.0\src\format.rs:
+C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\indicatif-0.11.0\src\progress.rs:
+C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\indicatif-0.11.0\src\style.rs:
+C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\indicatif-0.11.0\src\utils.rs:

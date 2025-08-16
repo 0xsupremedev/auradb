@@ -1,0 +1,1077 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ntapi-0.4.1\src\ntsam.rs`."><title>ntsam.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-84e720fa.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="ntapi" data-themes="" data-resource-suffix="" data-rustdoc-version="1.89.0 (29483883e 2025-08-04)" data-channel="1.89.0" data-search-js="search-92309212.js" data-settings-js="settings-5514c975.js" ><script src="../../static.files/storage-4e99c027.js"></script><script defer src="../../static.files/src-script-813739b1.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-fd3af306.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-32bb7600.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">ntapi/</div>ntsam.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-4"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="kw">use </span><span class="kw">crate</span>::string::UTF8Const;
+<a href=#2 id=2 data-nosnippet>2</a><span class="kw">use </span>winapi::shared::basetsd::ULONG64;
+<a href=#3 id=3 data-nosnippet>3</a><span class="kw">use </span>winapi::shared::minwindef::DWORD;
+<a href=#4 id=4 data-nosnippet>4</a><span class="kw">use </span>winapi::shared::ntdef::{
+<a href=#5 id=5 data-nosnippet>5</a>    BOOLEAN, HANDLE, LARGE_INTEGER, NTSTATUS, OEM_STRING, PLARGE_INTEGER, POBJECT_ATTRIBUTES,
+<a href=#6 id=6 data-nosnippet>6</a>    PUCHAR, PULONG, PUNICODE_STRING, PVOID, PWSTR, ULONG, UNICODE_STRING, USHORT,
+<a href=#7 id=7 data-nosnippet>7</a>};
+<a href=#8 id=8 data-nosnippet>8</a><span class="kw">use </span>winapi::um::ntsecapi::PDOMAIN_PASSWORD_INFORMATION;
+<a href=#9 id=9 data-nosnippet>9</a><span class="kw">use </span>winapi::um::subauth::LOGON_HOURS;
+<a href=#10 id=10 data-nosnippet>10</a><span class="kw">use </span>winapi::um::winnt::{
+<a href=#11 id=11 data-nosnippet>11</a>    ACCESS_MASK, PSECURITY_DESCRIPTOR, PSID, PSID_NAME_USE, SECURITY_INFORMATION, SID_NAME_USE,
+<a href=#12 id=12 data-nosnippet>12</a>    STANDARD_RIGHTS_EXECUTE, STANDARD_RIGHTS_READ, STANDARD_RIGHTS_REQUIRED, STANDARD_RIGHTS_WRITE,
+<a href=#13 id=13 data-nosnippet>13</a>};
+<a href=#14 id=14 data-nosnippet>14</a><span class="kw">pub const </span>SAM_MAXIMUM_LOOKUP_COUNT: u32 = <span class="number">1000</span>;
+<a href=#15 id=15 data-nosnippet>15</a><span class="kw">pub const </span>SAM_MAXIMUM_LOOKUP_LENGTH: u32 = <span class="number">32000</span>;
+<a href=#16 id=16 data-nosnippet>16</a><span class="kw">pub const </span>SAM_MAX_PASSWORD_LENGTH: u32 = <span class="number">256</span>;
+<a href=#17 id=17 data-nosnippet>17</a><span class="kw">pub const </span>SAM_PASSWORD_ENCRYPTION_SALT_LEN: u32 = <span class="number">16</span>;
+<a href=#18 id=18 data-nosnippet>18</a><span class="kw">pub type </span>PSAM_HANDLE = <span class="kw-2">*mut </span>PVOID;
+<a href=#19 id=19 data-nosnippet>19</a><span class="kw">pub type </span>SAM_HANDLE = PVOID;
+<a href=#20 id=20 data-nosnippet>20</a><span class="kw">pub type </span>SAM_ENUMERATE_HANDLE = ULONG;
+<a href=#21 id=21 data-nosnippet>21</a><span class="kw">pub type </span>PSAM_ENUMERATE_HANDLE = <span class="kw-2">*mut </span>ULONG;
+<a href=#22 id=22 data-nosnippet>22</a><span class="macro">STRUCT!</span>{<span class="kw">struct </span>SAM_RID_ENUMERATION {
+<a href=#23 id=23 data-nosnippet>23</a>    RelativeId: ULONG,
+<a href=#24 id=24 data-nosnippet>24</a>    Name: UNICODE_STRING,
+<a href=#25 id=25 data-nosnippet>25</a>}}
+<a href=#26 id=26 data-nosnippet>26</a><span class="kw">pub type </span>PSAM_RID_ENUMERATION = <span class="kw-2">*mut </span>SAM_RID_ENUMERATION;
+<a href=#27 id=27 data-nosnippet>27</a><span class="macro">STRUCT!</span>{<span class="kw">struct </span>SAM_SID_ENUMERATION {
+<a href=#28 id=28 data-nosnippet>28</a>    Sid: PSID,
+<a href=#29 id=29 data-nosnippet>29</a>    Name: UNICODE_STRING,
+<a href=#30 id=30 data-nosnippet>30</a>}}
+<a href=#31 id=31 data-nosnippet>31</a><span class="kw">pub type </span>PSAM_SID_ENUMERATION = <span class="kw-2">*mut </span>SAM_SID_ENUMERATION;
+<a href=#32 id=32 data-nosnippet>32</a><span class="macro">STRUCT!</span>{<span class="kw">struct </span>SAM_BYTE_ARRAY {
+<a href=#33 id=33 data-nosnippet>33</a>    Size: ULONG,
+<a href=#34 id=34 data-nosnippet>34</a>    Data: PUCHAR,
+<a href=#35 id=35 data-nosnippet>35</a>}}
+<a href=#36 id=36 data-nosnippet>36</a><span class="kw">pub type </span>PSAM_BYTE_ARRAY = <span class="kw-2">*mut </span>SAM_BYTE_ARRAY;
+<a href=#37 id=37 data-nosnippet>37</a><span class="macro">STRUCT!</span>{<span class="kw">struct </span>SAM_BYTE_ARRAY_32K {
+<a href=#38 id=38 data-nosnippet>38</a>    Size: ULONG,
+<a href=#39 id=39 data-nosnippet>39</a>    Data: PUCHAR,
+<a href=#40 id=40 data-nosnippet>40</a>}}
+<a href=#41 id=41 data-nosnippet>41</a><span class="kw">pub type </span>PSAM_BYTE_ARRAY_32K = <span class="kw-2">*mut </span>SAM_BYTE_ARRAY_32K;
+<a href=#42 id=42 data-nosnippet>42</a><span class="kw">pub type </span>PSAM_SHELL_OBJECT_PROPERTIES = <span class="kw-2">*mut </span>SAM_BYTE_ARRAY_32K;
+<a href=#43 id=43 data-nosnippet>43</a><span class="kw">pub type </span>SAM_SHELL_OBJECT_PROPERTIES = SAM_BYTE_ARRAY_32K;
+<a href=#44 id=44 data-nosnippet>44</a><span class="macro">EXTERN!</span>{<span class="kw">extern </span><span class="string">"system" </span>{
+<a href=#45 id=45 data-nosnippet>45</a>    <span class="kw">fn </span>SamFreeMemory(
+<a href=#46 id=46 data-nosnippet>46</a>        Buffer: PVOID,
+<a href=#47 id=47 data-nosnippet>47</a>    ) -&gt; NTSTATUS;
+<a href=#48 id=48 data-nosnippet>48</a>    <span class="kw">fn </span>SamCloseHandle(
+<a href=#49 id=49 data-nosnippet>49</a>        SamHandle: SAM_HANDLE,
+<a href=#50 id=50 data-nosnippet>50</a>    ) -&gt; NTSTATUS;
+<a href=#51 id=51 data-nosnippet>51</a>    <span class="kw">fn </span>SamSetSecurityObject(
+<a href=#52 id=52 data-nosnippet>52</a>        ObjectHandle: SAM_HANDLE,
+<a href=#53 id=53 data-nosnippet>53</a>        SecurityInformation: SECURITY_INFORMATION,
+<a href=#54 id=54 data-nosnippet>54</a>        SecurityDescriptor: PSECURITY_DESCRIPTOR,
+<a href=#55 id=55 data-nosnippet>55</a>    ) -&gt; NTSTATUS;
+<a href=#56 id=56 data-nosnippet>56</a>    <span class="kw">fn </span>SamQuerySecurityObject(
+<a href=#57 id=57 data-nosnippet>57</a>        ObjectHandle: SAM_HANDLE,
+<a href=#58 id=58 data-nosnippet>58</a>        SecurityInformation: SECURITY_INFORMATION,
+<a href=#59 id=59 data-nosnippet>59</a>        SecurityDescriptor: <span class="kw-2">*mut </span>PSECURITY_DESCRIPTOR,
+<a href=#60 id=60 data-nosnippet>60</a>    ) -&gt; NTSTATUS;
+<a href=#61 id=61 data-nosnippet>61</a>    <span class="kw">fn </span>SamRidToSid(
+<a href=#62 id=62 data-nosnippet>62</a>        ObjectHandle: SAM_HANDLE,
+<a href=#63 id=63 data-nosnippet>63</a>        Rid: ULONG,
+<a href=#64 id=64 data-nosnippet>64</a>        Sid: <span class="kw-2">*mut </span>PSID,
+<a href=#65 id=65 data-nosnippet>65</a>    ) -&gt; NTSTATUS;
+<a href=#66 id=66 data-nosnippet>66</a>}}
+<a href=#67 id=67 data-nosnippet>67</a><span class="kw">pub const </span>SAM_SERVER_CONNECT: ACCESS_MASK = <span class="number">0x0001</span>;
+<a href=#68 id=68 data-nosnippet>68</a><span class="kw">pub const </span>SAM_SERVER_SHUTDOWN: ACCESS_MASK = <span class="number">0x0002</span>;
+<a href=#69 id=69 data-nosnippet>69</a><span class="kw">pub const </span>SAM_SERVER_INITIALIZE: ACCESS_MASK = <span class="number">0x0004</span>;
+<a href=#70 id=70 data-nosnippet>70</a><span class="kw">pub const </span>SAM_SERVER_CREATE_DOMAIN: ACCESS_MASK = <span class="number">0x0008</span>;
+<a href=#71 id=71 data-nosnippet>71</a><span class="kw">pub const </span>SAM_SERVER_ENUMERATE_DOMAINS: ACCESS_MASK = <span class="number">0x0010</span>;
+<a href=#72 id=72 data-nosnippet>72</a><span class="kw">pub const </span>SAM_SERVER_LOOKUP_DOMAIN: ACCESS_MASK = <span class="number">0x0020</span>;
+<a href=#73 id=73 data-nosnippet>73</a><span class="kw">pub const </span>SAM_SERVER_ALL_ACCESS: ACCESS_MASK = STANDARD_RIGHTS_REQUIRED | SAM_SERVER_CONNECT
+<a href=#74 id=74 data-nosnippet>74</a>    | SAM_SERVER_INITIALIZE | SAM_SERVER_CREATE_DOMAIN | SAM_SERVER_SHUTDOWN
+<a href=#75 id=75 data-nosnippet>75</a>    | SAM_SERVER_ENUMERATE_DOMAINS | SAM_SERVER_LOOKUP_DOMAIN;
+<a href=#76 id=76 data-nosnippet>76</a><span class="kw">pub const </span>SAM_SERVER_READ: ACCESS_MASK = STANDARD_RIGHTS_READ | SAM_SERVER_ENUMERATE_DOMAINS;
+<a href=#77 id=77 data-nosnippet>77</a><span class="kw">pub const </span>SAM_SERVER_WRITE: ACCESS_MASK =
+<a href=#78 id=78 data-nosnippet>78</a>    STANDARD_RIGHTS_WRITE | SAM_SERVER_INITIALIZE | SAM_SERVER_CREATE_DOMAIN | SAM_SERVER_SHUTDOWN;
+<a href=#79 id=79 data-nosnippet>79</a><span class="kw">pub const </span>SAM_SERVER_EXECUTE: ACCESS_MASK =
+<a href=#80 id=80 data-nosnippet>80</a>    STANDARD_RIGHTS_EXECUTE | SAM_SERVER_CONNECT | SAM_SERVER_LOOKUP_DOMAIN;
+<a href=#81 id=81 data-nosnippet>81</a><span class="macro">EXTERN!</span>{<span class="kw">extern </span><span class="string">"system" </span>{
+<a href=#82 id=82 data-nosnippet>82</a>    <span class="kw">fn </span>SamConnect(
+<a href=#83 id=83 data-nosnippet>83</a>        ServerName: PUNICODE_STRING,
+<a href=#84 id=84 data-nosnippet>84</a>        ServerHandle: PSAM_HANDLE,
+<a href=#85 id=85 data-nosnippet>85</a>        DesiredAccess: ACCESS_MASK,
+<a href=#86 id=86 data-nosnippet>86</a>        ObjectAttributes: POBJECT_ATTRIBUTES,
+<a href=#87 id=87 data-nosnippet>87</a>    ) -&gt; NTSTATUS;
+<a href=#88 id=88 data-nosnippet>88</a>    <span class="kw">fn </span>SamShutdownSamServer(
+<a href=#89 id=89 data-nosnippet>89</a>        ServerHandle: SAM_HANDLE,
+<a href=#90 id=90 data-nosnippet>90</a>    ) -&gt; NTSTATUS;
+<a href=#91 id=91 data-nosnippet>91</a>}}
+<a href=#92 id=92 data-nosnippet>92</a><span class="kw">pub const </span>DOMAIN_READ_PASSWORD_PARAMETERS: u32 = <span class="number">0x0001</span>;
+<a href=#93 id=93 data-nosnippet>93</a><span class="kw">pub const </span>DOMAIN_WRITE_PASSWORD_PARAMS: u32 = <span class="number">0x0002</span>;
+<a href=#94 id=94 data-nosnippet>94</a><span class="kw">pub const </span>DOMAIN_READ_OTHER_PARAMETERS: u32 = <span class="number">0x0004</span>;
+<a href=#95 id=95 data-nosnippet>95</a><span class="kw">pub const </span>DOMAIN_WRITE_OTHER_PARAMETERS: u32 = <span class="number">0x0008</span>;
+<a href=#96 id=96 data-nosnippet>96</a><span class="kw">pub const </span>DOMAIN_CREATE_USER: u32 = <span class="number">0x0010</span>;
+<a href=#97 id=97 data-nosnippet>97</a><span class="kw">pub const </span>DOMAIN_CREATE_GROUP: u32 = <span class="number">0x0020</span>;
+<a href=#98 id=98 data-nosnippet>98</a><span class="kw">pub const </span>DOMAIN_CREATE_ALIAS: u32 = <span class="number">0x0040</span>;
+<a href=#99 id=99 data-nosnippet>99</a><span class="kw">pub const </span>DOMAIN_GET_ALIAS_MEMBERSHIP: u32 = <span class="number">0x0080</span>;
+<a href=#100 id=100 data-nosnippet>100</a><span class="kw">pub const </span>DOMAIN_LIST_ACCOUNTS: u32 = <span class="number">0x0100</span>;
+<a href=#101 id=101 data-nosnippet>101</a><span class="kw">pub const </span>DOMAIN_LOOKUP: u32 = <span class="number">0x0200</span>;
+<a href=#102 id=102 data-nosnippet>102</a><span class="kw">pub const </span>DOMAIN_ADMINISTER_SERVER: u32 = <span class="number">0x0400</span>;
+<a href=#103 id=103 data-nosnippet>103</a><span class="kw">pub const </span>DOMAIN_ALL_ACCESS: u32 = STANDARD_RIGHTS_REQUIRED | DOMAIN_READ_OTHER_PARAMETERS
+<a href=#104 id=104 data-nosnippet>104</a>    | DOMAIN_WRITE_OTHER_PARAMETERS | DOMAIN_WRITE_PASSWORD_PARAMS | DOMAIN_CREATE_USER
+<a href=#105 id=105 data-nosnippet>105</a>    | DOMAIN_CREATE_GROUP | DOMAIN_CREATE_ALIAS | DOMAIN_GET_ALIAS_MEMBERSHIP
+<a href=#106 id=106 data-nosnippet>106</a>    | DOMAIN_LIST_ACCOUNTS | DOMAIN_READ_PASSWORD_PARAMETERS | DOMAIN_LOOKUP
+<a href=#107 id=107 data-nosnippet>107</a>    | DOMAIN_ADMINISTER_SERVER;
+<a href=#108 id=108 data-nosnippet>108</a><span class="kw">pub const </span>DOMAIN_READ: u32 =
+<a href=#109 id=109 data-nosnippet>109</a>    STANDARD_RIGHTS_READ | DOMAIN_GET_ALIAS_MEMBERSHIP | DOMAIN_READ_OTHER_PARAMETERS;
+<a href=#110 id=110 data-nosnippet>110</a><span class="kw">pub const </span>DOMAIN_WRITE: u32 = STANDARD_RIGHTS_WRITE | DOMAIN_WRITE_OTHER_PARAMETERS
+<a href=#111 id=111 data-nosnippet>111</a>    | DOMAIN_WRITE_PASSWORD_PARAMS | DOMAIN_CREATE_USER | DOMAIN_CREATE_GROUP | DOMAIN_CREATE_ALIAS
+<a href=#112 id=112 data-nosnippet>112</a>    | DOMAIN_ADMINISTER_SERVER;
+<a href=#113 id=113 data-nosnippet>113</a><span class="kw">pub const </span>DOMAIN_EXECUTE: u32 = STANDARD_RIGHTS_EXECUTE | DOMAIN_READ_PASSWORD_PARAMETERS
+<a href=#114 id=114 data-nosnippet>114</a>    | DOMAIN_LIST_ACCOUNTS | DOMAIN_LOOKUP;
+<a href=#115 id=115 data-nosnippet>115</a><span class="macro">ENUM!</span>{<span class="kw">enum </span>DOMAIN_INFORMATION_CLASS {
+<a href=#116 id=116 data-nosnippet>116</a>    DomainPasswordInformation = <span class="number">1</span>,
+<a href=#117 id=117 data-nosnippet>117</a>    DomainGeneralInformation = <span class="number">2</span>,
+<a href=#118 id=118 data-nosnippet>118</a>    DomainLogoffInformation = <span class="number">3</span>,
+<a href=#119 id=119 data-nosnippet>119</a>    DomainOemInformation = <span class="number">4</span>,
+<a href=#120 id=120 data-nosnippet>120</a>    DomainNameInformation = <span class="number">5</span>,
+<a href=#121 id=121 data-nosnippet>121</a>    DomainReplicationInformation = <span class="number">6</span>,
+<a href=#122 id=122 data-nosnippet>122</a>    DomainServerRoleInformation = <span class="number">7</span>,
+<a href=#123 id=123 data-nosnippet>123</a>    DomainModifiedInformation = <span class="number">8</span>,
+<a href=#124 id=124 data-nosnippet>124</a>    DomainStateInformation = <span class="number">9</span>,
+<a href=#125 id=125 data-nosnippet>125</a>    DomainUasInformation = <span class="number">10</span>,
+<a href=#126 id=126 data-nosnippet>126</a>    DomainGeneralInformation2 = <span class="number">11</span>,
+<a href=#127 id=127 data-nosnippet>127</a>    DomainLockoutInformation = <span class="number">12</span>,
+<a href=#128 id=128 data-nosnippet>128</a>    DomainModifiedInformation2 = <span class="number">13</span>,
+<a href=#129 id=129 data-nosnippet>129</a>}}
+<a href=#130 id=130 data-nosnippet>130</a><span class="macro">ENUM!</span>{<span class="kw">enum </span>DOMAIN_SERVER_ENABLE_STATE {
+<a href=#131 id=131 data-nosnippet>131</a>    DomainServerEnabled = <span class="number">1</span>,
+<a href=#132 id=132 data-nosnippet>132</a>    DomainServerDisabled = <span class="number">2</span>,
+<a href=#133 id=133 data-nosnippet>133</a>}}
+<a href=#134 id=134 data-nosnippet>134</a><span class="kw">pub type </span>PDOMAIN_SERVER_ENABLE_STATE = <span class="kw-2">*mut </span>DOMAIN_SERVER_ENABLE_STATE;
+<a href=#135 id=135 data-nosnippet>135</a><span class="macro">ENUM!</span>{<span class="kw">enum </span>DOMAIN_SERVER_ROLE {
+<a href=#136 id=136 data-nosnippet>136</a>    DomainServerRoleBackup = <span class="number">2</span>,
+<a href=#137 id=137 data-nosnippet>137</a>    DomainServerRolePrimary = <span class="number">3</span>,
+<a href=#138 id=138 data-nosnippet>138</a>}}
+<a href=#139 id=139 data-nosnippet>139</a><span class="kw">pub type </span>PDOMAIN_SERVER_ROLE = <span class="kw-2">*mut </span>DOMAIN_SERVER_ROLE;
+<a href=#140 id=140 data-nosnippet>140</a><span class="macro">STRUCT!</span>{<span class="attr">#[repr(packed(<span class="number">4</span>))] </span><span class="kw">struct </span>DOMAIN_GENERAL_INFORMATION {
+<a href=#141 id=141 data-nosnippet>141</a>    ForceLogoff: LARGE_INTEGER,
+<a href=#142 id=142 data-nosnippet>142</a>    OemInformation: UNICODE_STRING,
+<a href=#143 id=143 data-nosnippet>143</a>    DomainName: UNICODE_STRING,
+<a href=#144 id=144 data-nosnippet>144</a>    ReplicaSourceNodeName: UNICODE_STRING,
+<a href=#145 id=145 data-nosnippet>145</a>    DomainModifiedCount: LARGE_INTEGER,
+<a href=#146 id=146 data-nosnippet>146</a>    DomainServerState: DOMAIN_SERVER_ENABLE_STATE,
+<a href=#147 id=147 data-nosnippet>147</a>    DomainServerRole: DOMAIN_SERVER_ROLE,
+<a href=#148 id=148 data-nosnippet>148</a>    UasCompatibilityRequired: BOOLEAN,
+<a href=#149 id=149 data-nosnippet>149</a>    UserCount: ULONG,
+<a href=#150 id=150 data-nosnippet>150</a>    GroupCount: ULONG,
+<a href=#151 id=151 data-nosnippet>151</a>    AliasCount: ULONG,
+<a href=#152 id=152 data-nosnippet>152</a>}}
+<a href=#153 id=153 data-nosnippet>153</a><span class="kw">pub type </span>PDOMAIN_GENERAL_INFORMATION = <span class="kw-2">*mut </span>DOMAIN_GENERAL_INFORMATION;
+<a href=#154 id=154 data-nosnippet>154</a><span class="macro">STRUCT!</span>{<span class="attr">#[repr(packed(<span class="number">4</span>))] </span><span class="kw">struct </span>DOMAIN_GENERAL_INFORMATION2 {
+<a href=#155 id=155 data-nosnippet>155</a>    I1: DOMAIN_GENERAL_INFORMATION,
+<a href=#156 id=156 data-nosnippet>156</a>    LockoutDuration: LARGE_INTEGER,
+<a href=#157 id=157 data-nosnippet>157</a>    LockoutObservationWindow: LARGE_INTEGER,
+<a href=#158 id=158 data-nosnippet>158</a>    LockoutThreshold: USHORT,
+<a href=#159 id=159 data-nosnippet>159</a>}}
+<a href=#160 id=160 data-nosnippet>160</a><span class="kw">pub type </span>PDOMAIN_GENERAL_INFORMATION2 = <span class="kw-2">*mut </span>DOMAIN_GENERAL_INFORMATION2;
+<a href=#161 id=161 data-nosnippet>161</a><span class="macro">STRUCT!</span>{<span class="kw">struct </span>DOMAIN_UAS_INFORMATION {
+<a href=#162 id=162 data-nosnippet>162</a>    UasCompatibilityRequired: BOOLEAN,
+<a href=#163 id=163 data-nosnippet>163</a>}}
+<a href=#164 id=164 data-nosnippet>164</a><span class="macro">ENUM!</span>{<span class="kw">enum </span>DOMAIN_PASSWORD_CONSTRUCTION {
+<a href=#165 id=165 data-nosnippet>165</a>    DomainPasswordSimple = <span class="number">1</span>,
+<a href=#166 id=166 data-nosnippet>166</a>    DomainPasswordComplex = <span class="number">2</span>,
+<a href=#167 id=167 data-nosnippet>167</a>}}
+<a href=#168 id=168 data-nosnippet>168</a><span class="macro">STRUCT!</span>{<span class="kw">struct </span>DOMAIN_LOGOFF_INFORMATION {
+<a href=#169 id=169 data-nosnippet>169</a>    ForceLogoff: LARGE_INTEGER,
+<a href=#170 id=170 data-nosnippet>170</a>}}
+<a href=#171 id=171 data-nosnippet>171</a><span class="kw">pub type </span>PDOMAIN_LOGOFF_INFORMATION = <span class="kw-2">*mut </span>DOMAIN_LOGOFF_INFORMATION;
+<a href=#172 id=172 data-nosnippet>172</a><span class="macro">STRUCT!</span>{<span class="kw">struct </span>DOMAIN_OEM_INFORMATION {
+<a href=#173 id=173 data-nosnippet>173</a>    OemInformation: UNICODE_STRING,
+<a href=#174 id=174 data-nosnippet>174</a>}}
+<a href=#175 id=175 data-nosnippet>175</a><span class="kw">pub type </span>PDOMAIN_OEM_INFORMATION = <span class="kw-2">*mut </span>DOMAIN_OEM_INFORMATION;
+<a href=#176 id=176 data-nosnippet>176</a><span class="macro">STRUCT!</span>{<span class="kw">struct </span>DOMAIN_NAME_INFORMATION {
+<a href=#177 id=177 data-nosnippet>177</a>    DomainName: UNICODE_STRING,
+<a href=#178 id=178 data-nosnippet>178</a>}}
+<a href=#179 id=179 data-nosnippet>179</a><span class="kw">pub type </span>PDOMAIN_NAME_INFORMATION = <span class="kw-2">*mut </span>DOMAIN_NAME_INFORMATION;
+<a href=#180 id=180 data-nosnippet>180</a><span class="macro">STRUCT!</span>{<span class="kw">struct </span>DOMAIN_SERVER_ROLE_INFORMATION {
+<a href=#181 id=181 data-nosnippet>181</a>    DomainServerRole: DOMAIN_SERVER_ROLE,
+<a href=#182 id=182 data-nosnippet>182</a>}}
+<a href=#183 id=183 data-nosnippet>183</a><span class="kw">pub type </span>PDOMAIN_SERVER_ROLE_INFORMATION = <span class="kw-2">*mut </span>DOMAIN_SERVER_ROLE_INFORMATION;
+<a href=#184 id=184 data-nosnippet>184</a><span class="macro">STRUCT!</span>{<span class="kw">struct </span>DOMAIN_REPLICATION_INFORMATION {
+<a href=#185 id=185 data-nosnippet>185</a>    ReplicaSourceNodeName: UNICODE_STRING,
+<a href=#186 id=186 data-nosnippet>186</a>}}
+<a href=#187 id=187 data-nosnippet>187</a><span class="kw">pub type </span>PDOMAIN_REPLICATION_INFORMATION = <span class="kw-2">*mut </span>DOMAIN_REPLICATION_INFORMATION;
+<a href=#188 id=188 data-nosnippet>188</a><span class="macro">STRUCT!</span>{<span class="kw">struct </span>DOMAIN_MODIFIED_INFORMATION {
+<a href=#189 id=189 data-nosnippet>189</a>    DomainModifiedCount: LARGE_INTEGER,
+<a href=#190 id=190 data-nosnippet>190</a>    CreationTime: LARGE_INTEGER,
+<a href=#191 id=191 data-nosnippet>191</a>}}
+<a href=#192 id=192 data-nosnippet>192</a><span class="kw">pub type </span>PDOMAIN_MODIFIED_INFORMATION = <span class="kw-2">*mut </span>DOMAIN_MODIFIED_INFORMATION;
+<a href=#193 id=193 data-nosnippet>193</a><span class="macro">STRUCT!</span>{<span class="kw">struct </span>DOMAIN_MODIFIED_INFORMATION2 {
+<a href=#194 id=194 data-nosnippet>194</a>    DomainModifiedCount: LARGE_INTEGER,
+<a href=#195 id=195 data-nosnippet>195</a>    CreationTime: LARGE_INTEGER,
+<a href=#196 id=196 data-nosnippet>196</a>    ModifiedCountAtLastPromotion: LARGE_INTEGER,
+<a href=#197 id=197 data-nosnippet>197</a>}}
+<a href=#198 id=198 data-nosnippet>198</a><span class="kw">pub type </span>PDOMAIN_MODIFIED_INFORMATION2 = <span class="kw-2">*mut </span>DOMAIN_MODIFIED_INFORMATION2;
+<a href=#199 id=199 data-nosnippet>199</a><span class="macro">STRUCT!</span>{<span class="kw">struct </span>DOMAIN_STATE_INFORMATION {
+<a href=#200 id=200 data-nosnippet>200</a>    DomainServerState: DOMAIN_SERVER_ENABLE_STATE,
+<a href=#201 id=201 data-nosnippet>201</a>}}
+<a href=#202 id=202 data-nosnippet>202</a><span class="kw">pub type </span>PDOMAIN_STATE_INFORMATION = <span class="kw-2">*mut </span>DOMAIN_STATE_INFORMATION;
+<a href=#203 id=203 data-nosnippet>203</a><span class="macro">STRUCT!</span>{<span class="kw">struct </span>DOMAIN_LOCKOUT_INFORMATION {
+<a href=#204 id=204 data-nosnippet>204</a>    LockoutDuration: LARGE_INTEGER,
+<a href=#205 id=205 data-nosnippet>205</a>    LockoutObservationWindow: LARGE_INTEGER,
+<a href=#206 id=206 data-nosnippet>206</a>    LockoutThreshold: USHORT,
+<a href=#207 id=207 data-nosnippet>207</a>}}
+<a href=#208 id=208 data-nosnippet>208</a><span class="kw">pub type </span>PDOMAIN_LOCKOUT_INFORMATION = <span class="kw-2">*mut </span>DOMAIN_LOCKOUT_INFORMATION;
+<a href=#209 id=209 data-nosnippet>209</a><span class="macro">ENUM!</span>{<span class="kw">enum </span>DOMAIN_DISPLAY_INFORMATION {
+<a href=#210 id=210 data-nosnippet>210</a>    DomainDisplayUser = <span class="number">1</span>,
+<a href=#211 id=211 data-nosnippet>211</a>    DomainDisplayMachine = <span class="number">2</span>,
+<a href=#212 id=212 data-nosnippet>212</a>    DomainDisplayGroup = <span class="number">3</span>,
+<a href=#213 id=213 data-nosnippet>213</a>    DomainDisplayOemUser = <span class="number">4</span>,
+<a href=#214 id=214 data-nosnippet>214</a>    DomainDisplayOemGroup = <span class="number">5</span>,
+<a href=#215 id=215 data-nosnippet>215</a>    DomainDisplayServer = <span class="number">6</span>,
+<a href=#216 id=216 data-nosnippet>216</a>}}
+<a href=#217 id=217 data-nosnippet>217</a><span class="kw">pub type </span>PDOMAIN_DISPLAY_INFORMATION = <span class="kw-2">*mut </span>DOMAIN_DISPLAY_INFORMATION;
+<a href=#218 id=218 data-nosnippet>218</a><span class="macro">STRUCT!</span>{<span class="kw">struct </span>DOMAIN_DISPLAY_USER {
+<a href=#219 id=219 data-nosnippet>219</a>    Index: ULONG,
+<a href=#220 id=220 data-nosnippet>220</a>    Rid: ULONG,
+<a href=#221 id=221 data-nosnippet>221</a>    AccountControl: ULONG,
+<a href=#222 id=222 data-nosnippet>222</a>    LogonName: UNICODE_STRING,
+<a href=#223 id=223 data-nosnippet>223</a>    AdminComment: UNICODE_STRING,
+<a href=#224 id=224 data-nosnippet>224</a>    FullName: UNICODE_STRING,
+<a href=#225 id=225 data-nosnippet>225</a>}}
+<a href=#226 id=226 data-nosnippet>226</a><span class="kw">pub type </span>PDOMAIN_DISPLAY_USER = <span class="kw-2">*mut </span>DOMAIN_DISPLAY_USER;
+<a href=#227 id=227 data-nosnippet>227</a><span class="macro">STRUCT!</span>{<span class="kw">struct </span>DOMAIN_DISPLAY_MACHINE {
+<a href=#228 id=228 data-nosnippet>228</a>    Index: ULONG,
+<a href=#229 id=229 data-nosnippet>229</a>    Rid: ULONG,
+<a href=#230 id=230 data-nosnippet>230</a>    AccountControl: ULONG,
+<a href=#231 id=231 data-nosnippet>231</a>    Machine: UNICODE_STRING,
+<a href=#232 id=232 data-nosnippet>232</a>    Comment: UNICODE_STRING,
+<a href=#233 id=233 data-nosnippet>233</a>}}
+<a href=#234 id=234 data-nosnippet>234</a><span class="kw">pub type </span>PDOMAIN_DISPLAY_MACHINE = <span class="kw-2">*mut </span>DOMAIN_DISPLAY_MACHINE;
+<a href=#235 id=235 data-nosnippet>235</a><span class="macro">STRUCT!</span>{<span class="kw">struct </span>DOMAIN_DISPLAY_GROUP {
+<a href=#236 id=236 data-nosnippet>236</a>    Index: ULONG,
+<a href=#237 id=237 data-nosnippet>237</a>    Rid: ULONG,
+<a href=#238 id=238 data-nosnippet>238</a>    Attributes: ULONG,
+<a href=#239 id=239 data-nosnippet>239</a>    Group: UNICODE_STRING,
+<a href=#240 id=240 data-nosnippet>240</a>    Comment: UNICODE_STRING,
+<a href=#241 id=241 data-nosnippet>241</a>}}
+<a href=#242 id=242 data-nosnippet>242</a><span class="kw">pub type </span>PDOMAIN_DISPLAY_GROUP = <span class="kw-2">*mut </span>DOMAIN_DISPLAY_GROUP;
+<a href=#243 id=243 data-nosnippet>243</a><span class="macro">STRUCT!</span>{<span class="kw">struct </span>DOMAIN_DISPLAY_OEM_USER {
+<a href=#244 id=244 data-nosnippet>244</a>    Index: ULONG,
+<a href=#245 id=245 data-nosnippet>245</a>    User: OEM_STRING,
+<a href=#246 id=246 data-nosnippet>246</a>}}
+<a href=#247 id=247 data-nosnippet>247</a><span class="kw">pub type </span>PDOMAIN_DISPLAY_OEM_USER = <span class="kw-2">*mut </span>DOMAIN_DISPLAY_OEM_USER;
+<a href=#248 id=248 data-nosnippet>248</a><span class="macro">STRUCT!</span>{<span class="kw">struct </span>DOMAIN_DISPLAY_OEM_GROUP {
+<a href=#249 id=249 data-nosnippet>249</a>    Index: ULONG,
+<a href=#250 id=250 data-nosnippet>250</a>    Group: OEM_STRING,
+<a href=#251 id=251 data-nosnippet>251</a>}}
+<a href=#252 id=252 data-nosnippet>252</a><span class="kw">pub type </span>PDOMAIN_DISPLAY_OEM_GROUP = <span class="kw-2">*mut </span>DOMAIN_DISPLAY_OEM_GROUP;
+<a href=#253 id=253 data-nosnippet>253</a><span class="macro">ENUM!</span>{<span class="kw">enum </span>DOMAIN_LOCALIZABLE_ACCOUNTS_INFORMATION {
+<a href=#254 id=254 data-nosnippet>254</a>    DomainLocalizableAccountsBasic = <span class="number">1</span>,
+<a href=#255 id=255 data-nosnippet>255</a>}}
+<a href=#256 id=256 data-nosnippet>256</a><span class="kw">pub type </span>PDOMAIN_LOCALIZABLE_ACCOUNTS_INFORMATION = <span class="kw-2">*mut </span>DOMAIN_LOCALIZABLE_ACCOUNTS_INFORMATION;
+<a href=#257 id=257 data-nosnippet>257</a><span class="macro">STRUCT!</span>{<span class="kw">struct </span>DOMAIN_LOCALIZABLE_ACCOUNT_ENTRY {
+<a href=#258 id=258 data-nosnippet>258</a>    Rid: ULONG,
+<a href=#259 id=259 data-nosnippet>259</a>    Use: SID_NAME_USE,
+<a href=#260 id=260 data-nosnippet>260</a>    Name: UNICODE_STRING,
+<a href=#261 id=261 data-nosnippet>261</a>    AdminComment: UNICODE_STRING,
+<a href=#262 id=262 data-nosnippet>262</a>}}
+<a href=#263 id=263 data-nosnippet>263</a><span class="kw">pub type </span>PDOMAIN_LOCALIZABLE_ACCOUNT_ENTRY = <span class="kw-2">*mut </span>DOMAIN_LOCALIZABLE_ACCOUNT_ENTRY;
+<a href=#264 id=264 data-nosnippet>264</a><span class="macro">STRUCT!</span>{<span class="kw">struct </span>DOMAIN_LOCALIZABLE_ACCOUNTS_BASIC {
+<a href=#265 id=265 data-nosnippet>265</a>    Count: ULONG,
+<a href=#266 id=266 data-nosnippet>266</a>    Entries: <span class="kw-2">*mut </span>DOMAIN_LOCALIZABLE_ACCOUNT_ENTRY,
+<a href=#267 id=267 data-nosnippet>267</a>}}
+<a href=#268 id=268 data-nosnippet>268</a><span class="kw">pub type </span>PDOMAIN_LOCALIZABLE_ACCOUNTS_BASIC = <span class="kw-2">*mut </span>DOMAIN_LOCALIZABLE_ACCOUNTS_BASIC;
+<a href=#269 id=269 data-nosnippet>269</a><span class="macro">UNION!</span>{<span class="kw">union </span>DOMAIN_LOCALIZABLE_ACCOUNTS_INFO_BUFFER {
+<a href=#270 id=270 data-nosnippet>270</a>    Basic: DOMAIN_LOCALIZABLE_ACCOUNTS_BASIC,
+<a href=#271 id=271 data-nosnippet>271</a>}}
+<a href=#272 id=272 data-nosnippet>272</a><span class="kw">pub type </span>PDOMAIN_LOCALIZABLE_ACCOUNTS_INFO_BUFFER = <span class="kw-2">*mut </span>DOMAIN_LOCALIZABLE_ACCOUNTS_INFO_BUFFER;
+<a href=#273 id=273 data-nosnippet>273</a><span class="macro">EXTERN!</span>{<span class="kw">extern </span><span class="string">"system" </span>{
+<a href=#274 id=274 data-nosnippet>274</a>    <span class="kw">fn </span>SamLookupDomainInSamServer(
+<a href=#275 id=275 data-nosnippet>275</a>        ServerHandle: SAM_HANDLE,
+<a href=#276 id=276 data-nosnippet>276</a>        Name: PUNICODE_STRING,
+<a href=#277 id=277 data-nosnippet>277</a>        DomainId: <span class="kw-2">*mut </span>PSID,
+<a href=#278 id=278 data-nosnippet>278</a>    ) -&gt; NTSTATUS;
+<a href=#279 id=279 data-nosnippet>279</a>    <span class="kw">fn </span>SamEnumerateDomainsInSamServer(
+<a href=#280 id=280 data-nosnippet>280</a>        ServerHandle: SAM_HANDLE,
+<a href=#281 id=281 data-nosnippet>281</a>        EnumerationContext: PSAM_ENUMERATE_HANDLE,
+<a href=#282 id=282 data-nosnippet>282</a>        Buffer: <span class="kw-2">*mut </span>PVOID,
+<a href=#283 id=283 data-nosnippet>283</a>        PreferedMaximumLength: ULONG,
+<a href=#284 id=284 data-nosnippet>284</a>        CountReturned: PULONG,
+<a href=#285 id=285 data-nosnippet>285</a>    ) -&gt; NTSTATUS;
+<a href=#286 id=286 data-nosnippet>286</a>    <span class="kw">fn </span>SamOpenDomain(
+<a href=#287 id=287 data-nosnippet>287</a>        ServerHandle: SAM_HANDLE,
+<a href=#288 id=288 data-nosnippet>288</a>        DesiredAccess: ACCESS_MASK,
+<a href=#289 id=289 data-nosnippet>289</a>        DomainId: PSID,
+<a href=#290 id=290 data-nosnippet>290</a>        DomainHandle: PSAM_HANDLE,
+<a href=#291 id=291 data-nosnippet>291</a>    ) -&gt; NTSTATUS;
+<a href=#292 id=292 data-nosnippet>292</a>    <span class="kw">fn </span>SamQueryInformationDomain(
+<a href=#293 id=293 data-nosnippet>293</a>        DomainHandle: SAM_HANDLE,
+<a href=#294 id=294 data-nosnippet>294</a>        DomainInformationClass: DOMAIN_INFORMATION_CLASS,
+<a href=#295 id=295 data-nosnippet>295</a>        Buffer: <span class="kw-2">*mut </span>PVOID,
+<a href=#296 id=296 data-nosnippet>296</a>    ) -&gt; NTSTATUS;
+<a href=#297 id=297 data-nosnippet>297</a>    <span class="kw">fn </span>SamSetInformationDomain(
+<a href=#298 id=298 data-nosnippet>298</a>        DomainHandle: SAM_HANDLE,
+<a href=#299 id=299 data-nosnippet>299</a>        DomainInformationClass: DOMAIN_INFORMATION_CLASS,
+<a href=#300 id=300 data-nosnippet>300</a>        DomainInformation: PVOID,
+<a href=#301 id=301 data-nosnippet>301</a>    ) -&gt; NTSTATUS;
+<a href=#302 id=302 data-nosnippet>302</a>    <span class="kw">fn </span>SamLookupNamesInDomain(
+<a href=#303 id=303 data-nosnippet>303</a>        DomainHandle: SAM_HANDLE,
+<a href=#304 id=304 data-nosnippet>304</a>        Count: ULONG,
+<a href=#305 id=305 data-nosnippet>305</a>        Names: PUNICODE_STRING,
+<a href=#306 id=306 data-nosnippet>306</a>        RelativeIds: <span class="kw-2">*mut </span>PULONG,
+<a href=#307 id=307 data-nosnippet>307</a>        Use: <span class="kw-2">*mut </span>PSID_NAME_USE,
+<a href=#308 id=308 data-nosnippet>308</a>    ) -&gt; NTSTATUS;
+<a href=#309 id=309 data-nosnippet>309</a>    <span class="kw">fn </span>SamLookupIdsInDomain(
+<a href=#310 id=310 data-nosnippet>310</a>        DomainHandle: SAM_HANDLE,
+<a href=#311 id=311 data-nosnippet>311</a>        Count: ULONG,
+<a href=#312 id=312 data-nosnippet>312</a>        RelativeIds: PULONG,
+<a href=#313 id=313 data-nosnippet>313</a>        Names: <span class="kw-2">*mut </span>PUNICODE_STRING,
+<a href=#314 id=314 data-nosnippet>314</a>        Use: <span class="kw-2">*mut </span>PSID_NAME_USE,
+<a href=#315 id=315 data-nosnippet>315</a>    ) -&gt; NTSTATUS;
+<a href=#316 id=316 data-nosnippet>316</a>    <span class="kw">fn </span>SamRemoveMemberFromForeignDomain(
+<a href=#317 id=317 data-nosnippet>317</a>        DomainHandle: SAM_HANDLE,
+<a href=#318 id=318 data-nosnippet>318</a>        MemberId: PSID,
+<a href=#319 id=319 data-nosnippet>319</a>    ) -&gt; NTSTATUS;
+<a href=#320 id=320 data-nosnippet>320</a>    <span class="kw">fn </span>SamQueryLocalizableAccountsInDomain(
+<a href=#321 id=321 data-nosnippet>321</a>        Domain: SAM_HANDLE,
+<a href=#322 id=322 data-nosnippet>322</a>        Flags: ULONG,
+<a href=#323 id=323 data-nosnippet>323</a>        LanguageId: ULONG,
+<a href=#324 id=324 data-nosnippet>324</a>        Class: DOMAIN_LOCALIZABLE_ACCOUNTS_INFORMATION,
+<a href=#325 id=325 data-nosnippet>325</a>        Buffer: <span class="kw-2">*mut </span>PVOID,
+<a href=#326 id=326 data-nosnippet>326</a>    ) -&gt; NTSTATUS;
+<a href=#327 id=327 data-nosnippet>327</a>}}
+<a href=#328 id=328 data-nosnippet>328</a><span class="kw">pub const </span>GROUP_READ_INFORMATION: ACCESS_MASK = <span class="number">0x0001</span>;
+<a href=#329 id=329 data-nosnippet>329</a><span class="kw">pub const </span>GROUP_WRITE_ACCOUNT: ACCESS_MASK = <span class="number">0x0002</span>;
+<a href=#330 id=330 data-nosnippet>330</a><span class="kw">pub const </span>GROUP_ADD_MEMBER: ACCESS_MASK = <span class="number">0x0004</span>;
+<a href=#331 id=331 data-nosnippet>331</a><span class="kw">pub const </span>GROUP_REMOVE_MEMBER: ACCESS_MASK = <span class="number">0x0008</span>;
+<a href=#332 id=332 data-nosnippet>332</a><span class="kw">pub const </span>GROUP_LIST_MEMBERS: ACCESS_MASK = <span class="number">0x0010</span>;
+<a href=#333 id=333 data-nosnippet>333</a><span class="kw">pub const </span>GROUP_ALL_ACCESS: ACCESS_MASK = STANDARD_RIGHTS_REQUIRED | GROUP_LIST_MEMBERS
+<a href=#334 id=334 data-nosnippet>334</a>    | GROUP_WRITE_ACCOUNT | GROUP_ADD_MEMBER | GROUP_REMOVE_MEMBER | GROUP_READ_INFORMATION;
+<a href=#335 id=335 data-nosnippet>335</a><span class="kw">pub const </span>GROUP_READ: ACCESS_MASK = STANDARD_RIGHTS_READ | GROUP_LIST_MEMBERS;
+<a href=#336 id=336 data-nosnippet>336</a><span class="kw">pub const </span>GROUP_WRITE: ACCESS_MASK =
+<a href=#337 id=337 data-nosnippet>337</a>    STANDARD_RIGHTS_WRITE | GROUP_WRITE_ACCOUNT | GROUP_ADD_MEMBER | GROUP_REMOVE_MEMBER;
+<a href=#338 id=338 data-nosnippet>338</a><span class="kw">pub const </span>GROUP_EXECUTE: ACCESS_MASK = STANDARD_RIGHTS_EXECUTE | GROUP_READ_INFORMATION;
+<a href=#339 id=339 data-nosnippet>339</a><span class="macro">STRUCT!</span>{<span class="kw">struct </span>GROUP_MEMBERSHIP {
+<a href=#340 id=340 data-nosnippet>340</a>    RelativeId: ULONG,
+<a href=#341 id=341 data-nosnippet>341</a>    Attributes: ULONG,
+<a href=#342 id=342 data-nosnippet>342</a>}}
+<a href=#343 id=343 data-nosnippet>343</a><span class="kw">pub type </span>PGROUP_MEMBERSHIP = <span class="kw-2">*mut </span>GROUP_MEMBERSHIP;
+<a href=#344 id=344 data-nosnippet>344</a><span class="macro">ENUM!</span>{<span class="kw">enum </span>GROUP_INFORMATION_CLASS {
+<a href=#345 id=345 data-nosnippet>345</a>    GroupGeneralInformation = <span class="number">1</span>,
+<a href=#346 id=346 data-nosnippet>346</a>    GroupNameInformation = <span class="number">2</span>,
+<a href=#347 id=347 data-nosnippet>347</a>    GroupAttributeInformation = <span class="number">3</span>,
+<a href=#348 id=348 data-nosnippet>348</a>    GroupAdminCommentInformation = <span class="number">4</span>,
+<a href=#349 id=349 data-nosnippet>349</a>    GroupReplicationInformation = <span class="number">5</span>,
+<a href=#350 id=350 data-nosnippet>350</a>}}
+<a href=#351 id=351 data-nosnippet>351</a><span class="macro">STRUCT!</span>{<span class="kw">struct </span>GROUP_GENERAL_INFORMATION {
+<a href=#352 id=352 data-nosnippet>352</a>    Name: UNICODE_STRING,
+<a href=#353 id=353 data-nosnippet>353</a>    Attributes: ULONG,
+<a href=#354 id=354 data-nosnippet>354</a>    MemberCount: ULONG,
+<a href=#355 id=355 data-nosnippet>355</a>    AdminComment: UNICODE_STRING,
+<a href=#356 id=356 data-nosnippet>356</a>}}
+<a href=#357 id=357 data-nosnippet>357</a><span class="kw">pub type </span>PGROUP_GENERAL_INFORMATION = <span class="kw-2">*mut </span>GROUP_GENERAL_INFORMATION;
+<a href=#358 id=358 data-nosnippet>358</a><span class="macro">STRUCT!</span>{<span class="kw">struct </span>GROUP_NAME_INFORMATION {
+<a href=#359 id=359 data-nosnippet>359</a>    Name: UNICODE_STRING,
+<a href=#360 id=360 data-nosnippet>360</a>}}
+<a href=#361 id=361 data-nosnippet>361</a><span class="kw">pub type </span>PGROUP_NAME_INFORMATION = <span class="kw-2">*mut </span>GROUP_NAME_INFORMATION;
+<a href=#362 id=362 data-nosnippet>362</a><span class="macro">STRUCT!</span>{<span class="kw">struct </span>GROUP_ATTRIBUTE_INFORMATION {
+<a href=#363 id=363 data-nosnippet>363</a>    Attributes: ULONG,
+<a href=#364 id=364 data-nosnippet>364</a>}}
+<a href=#365 id=365 data-nosnippet>365</a><span class="kw">pub type </span>PGROUP_ATTRIBUTE_INFORMATION = <span class="kw-2">*mut </span>GROUP_ATTRIBUTE_INFORMATION;
+<a href=#366 id=366 data-nosnippet>366</a><span class="macro">STRUCT!</span>{<span class="kw">struct </span>GROUP_ADM_COMMENT_INFORMATION {
+<a href=#367 id=367 data-nosnippet>367</a>    AdminComment: UNICODE_STRING,
+<a href=#368 id=368 data-nosnippet>368</a>}}
+<a href=#369 id=369 data-nosnippet>369</a><span class="kw">pub type </span>PGROUP_ADM_COMMENT_INFORMATION = <span class="kw-2">*mut </span>GROUP_ADM_COMMENT_INFORMATION;
+<a href=#370 id=370 data-nosnippet>370</a><span class="macro">EXTERN!</span>{<span class="kw">extern </span><span class="string">"system" </span>{
+<a href=#371 id=371 data-nosnippet>371</a>    <span class="kw">fn </span>SamEnumerateGroupsInDomain(
+<a href=#372 id=372 data-nosnippet>372</a>        DomainHandle: SAM_HANDLE,
+<a href=#373 id=373 data-nosnippet>373</a>        EnumerationContext: PSAM_ENUMERATE_HANDLE,
+<a href=#374 id=374 data-nosnippet>374</a>        Buffer: <span class="kw-2">*mut </span>PVOID,
+<a href=#375 id=375 data-nosnippet>375</a>        PreferedMaximumLength: ULONG,
+<a href=#376 id=376 data-nosnippet>376</a>        CountReturned: PULONG,
+<a href=#377 id=377 data-nosnippet>377</a>    ) -&gt; NTSTATUS;
+<a href=#378 id=378 data-nosnippet>378</a>    <span class="kw">fn </span>SamCreateGroupInDomain(
+<a href=#379 id=379 data-nosnippet>379</a>        DomainHandle: SAM_HANDLE,
+<a href=#380 id=380 data-nosnippet>380</a>        AccountName: PUNICODE_STRING,
+<a href=#381 id=381 data-nosnippet>381</a>        DesiredAccess: ACCESS_MASK,
+<a href=#382 id=382 data-nosnippet>382</a>        GroupHandle: PSAM_HANDLE,
+<a href=#383 id=383 data-nosnippet>383</a>        RelativeId: PULONG,
+<a href=#384 id=384 data-nosnippet>384</a>    ) -&gt; NTSTATUS;
+<a href=#385 id=385 data-nosnippet>385</a>    <span class="kw">fn </span>SamOpenGroup(
+<a href=#386 id=386 data-nosnippet>386</a>        DomainHandle: SAM_HANDLE,
+<a href=#387 id=387 data-nosnippet>387</a>        DesiredAccess: ACCESS_MASK,
+<a href=#388 id=388 data-nosnippet>388</a>        GroupId: ULONG,
+<a href=#389 id=389 data-nosnippet>389</a>        GroupHandle: PSAM_HANDLE,
+<a href=#390 id=390 data-nosnippet>390</a>    ) -&gt; NTSTATUS;
+<a href=#391 id=391 data-nosnippet>391</a>    <span class="kw">fn </span>SamDeleteGroup(
+<a href=#392 id=392 data-nosnippet>392</a>        GroupHandle: SAM_HANDLE,
+<a href=#393 id=393 data-nosnippet>393</a>    ) -&gt; NTSTATUS;
+<a href=#394 id=394 data-nosnippet>394</a>    <span class="kw">fn </span>SamQueryInformationGroup(
+<a href=#395 id=395 data-nosnippet>395</a>        GroupHandle: SAM_HANDLE,
+<a href=#396 id=396 data-nosnippet>396</a>        GroupInformationClass: GROUP_INFORMATION_CLASS,
+<a href=#397 id=397 data-nosnippet>397</a>        Buffer: <span class="kw-2">*mut </span>PVOID,
+<a href=#398 id=398 data-nosnippet>398</a>    ) -&gt; NTSTATUS;
+<a href=#399 id=399 data-nosnippet>399</a>    <span class="kw">fn </span>SamSetInformationGroup(
+<a href=#400 id=400 data-nosnippet>400</a>        GroupHandle: SAM_HANDLE,
+<a href=#401 id=401 data-nosnippet>401</a>        GroupInformationClass: GROUP_INFORMATION_CLASS,
+<a href=#402 id=402 data-nosnippet>402</a>        Buffer: PVOID,
+<a href=#403 id=403 data-nosnippet>403</a>    ) -&gt; NTSTATUS;
+<a href=#404 id=404 data-nosnippet>404</a>    <span class="kw">fn </span>SamAddMemberToGroup(
+<a href=#405 id=405 data-nosnippet>405</a>        GroupHandle: SAM_HANDLE,
+<a href=#406 id=406 data-nosnippet>406</a>        MemberId: ULONG,
+<a href=#407 id=407 data-nosnippet>407</a>        Attributes: ULONG,
+<a href=#408 id=408 data-nosnippet>408</a>    ) -&gt; NTSTATUS;
+<a href=#409 id=409 data-nosnippet>409</a>    <span class="kw">fn </span>SamRemoveMemberFromGroup(
+<a href=#410 id=410 data-nosnippet>410</a>        GroupHandle: SAM_HANDLE,
+<a href=#411 id=411 data-nosnippet>411</a>        MemberId: ULONG,
+<a href=#412 id=412 data-nosnippet>412</a>    ) -&gt; NTSTATUS;
+<a href=#413 id=413 data-nosnippet>413</a>    <span class="kw">fn </span>SamGetMembersInGroup(
+<a href=#414 id=414 data-nosnippet>414</a>        GroupHandle: SAM_HANDLE,
+<a href=#415 id=415 data-nosnippet>415</a>        MemberIds: <span class="kw-2">*mut </span>PULONG,
+<a href=#416 id=416 data-nosnippet>416</a>        Attributes: <span class="kw-2">*mut </span>PULONG,
+<a href=#417 id=417 data-nosnippet>417</a>        MemberCount: PULONG,
+<a href=#418 id=418 data-nosnippet>418</a>    ) -&gt; NTSTATUS;
+<a href=#419 id=419 data-nosnippet>419</a>    <span class="kw">fn </span>SamSetMemberAttributesOfGroup(
+<a href=#420 id=420 data-nosnippet>420</a>        GroupHandle: SAM_HANDLE,
+<a href=#421 id=421 data-nosnippet>421</a>        MemberId: ULONG,
+<a href=#422 id=422 data-nosnippet>422</a>        Attributes: ULONG,
+<a href=#423 id=423 data-nosnippet>423</a>    ) -&gt; NTSTATUS;
+<a href=#424 id=424 data-nosnippet>424</a>}}
+<a href=#425 id=425 data-nosnippet>425</a><span class="kw">pub const </span>ALIAS_ADD_MEMBER: ACCESS_MASK = <span class="number">0x0001</span>;
+<a href=#426 id=426 data-nosnippet>426</a><span class="kw">pub const </span>ALIAS_REMOVE_MEMBER: ACCESS_MASK = <span class="number">0x0002</span>;
+<a href=#427 id=427 data-nosnippet>427</a><span class="kw">pub const </span>ALIAS_LIST_MEMBERS: ACCESS_MASK = <span class="number">0x0004</span>;
+<a href=#428 id=428 data-nosnippet>428</a><span class="kw">pub const </span>ALIAS_READ_INFORMATION: ACCESS_MASK = <span class="number">0x0008</span>;
+<a href=#429 id=429 data-nosnippet>429</a><span class="kw">pub const </span>ALIAS_WRITE_ACCOUNT: ACCESS_MASK = <span class="number">0x0010</span>;
+<a href=#430 id=430 data-nosnippet>430</a><span class="kw">pub const </span>ALIAS_ALL_ACCESS: ACCESS_MASK = STANDARD_RIGHTS_REQUIRED | ALIAS_READ_INFORMATION
+<a href=#431 id=431 data-nosnippet>431</a>    | ALIAS_WRITE_ACCOUNT | ALIAS_LIST_MEMBERS | ALIAS_ADD_MEMBER | ALIAS_REMOVE_MEMBER;
+<a href=#432 id=432 data-nosnippet>432</a><span class="kw">pub const </span>ALIAS_READ: ACCESS_MASK = STANDARD_RIGHTS_READ | ALIAS_LIST_MEMBERS;
+<a href=#433 id=433 data-nosnippet>433</a><span class="kw">pub const </span>ALIAS_WRITE: ACCESS_MASK =
+<a href=#434 id=434 data-nosnippet>434</a>    STANDARD_RIGHTS_WRITE | ALIAS_WRITE_ACCOUNT | ALIAS_ADD_MEMBER | ALIAS_REMOVE_MEMBER;
+<a href=#435 id=435 data-nosnippet>435</a><span class="kw">pub const </span>ALIAS_EXECUTE: ACCESS_MASK = STANDARD_RIGHTS_EXECUTE | ALIAS_READ_INFORMATION;
+<a href=#436 id=436 data-nosnippet>436</a><span class="macro">ENUM!</span>{<span class="kw">enum </span>ALIAS_INFORMATION_CLASS {
+<a href=#437 id=437 data-nosnippet>437</a>    AliasGeneralInformation = <span class="number">1</span>,
+<a href=#438 id=438 data-nosnippet>438</a>    AliasNameInformation = <span class="number">2</span>,
+<a href=#439 id=439 data-nosnippet>439</a>    AliasAdminCommentInformation = <span class="number">3</span>,
+<a href=#440 id=440 data-nosnippet>440</a>    AliasReplicationInformation = <span class="number">4</span>,
+<a href=#441 id=441 data-nosnippet>441</a>    AliasExtendedInformation = <span class="number">5</span>,
+<a href=#442 id=442 data-nosnippet>442</a>}}
+<a href=#443 id=443 data-nosnippet>443</a><span class="macro">STRUCT!</span>{<span class="kw">struct </span>ALIAS_GENERAL_INFORMATION {
+<a href=#444 id=444 data-nosnippet>444</a>    Name: UNICODE_STRING,
+<a href=#445 id=445 data-nosnippet>445</a>    MemberCount: ULONG,
+<a href=#446 id=446 data-nosnippet>446</a>    AdminComment: UNICODE_STRING,
+<a href=#447 id=447 data-nosnippet>447</a>}}
+<a href=#448 id=448 data-nosnippet>448</a><span class="kw">pub type </span>PALIAS_GENERAL_INFORMATION = <span class="kw-2">*mut </span>ALIAS_GENERAL_INFORMATION;
+<a href=#449 id=449 data-nosnippet>449</a><span class="macro">STRUCT!</span>{<span class="kw">struct </span>ALIAS_NAME_INFORMATION {
+<a href=#450 id=450 data-nosnippet>450</a>    Name: UNICODE_STRING,
+<a href=#451 id=451 data-nosnippet>451</a>}}
+<a href=#452 id=452 data-nosnippet>452</a><span class="kw">pub type </span>PALIAS_NAME_INFORMATION = <span class="kw-2">*mut </span>ALIAS_NAME_INFORMATION;
+<a href=#453 id=453 data-nosnippet>453</a><span class="macro">STRUCT!</span>{<span class="kw">struct </span>ALIAS_ADM_COMMENT_INFORMATION {
+<a href=#454 id=454 data-nosnippet>454</a>    AdminComment: UNICODE_STRING,
+<a href=#455 id=455 data-nosnippet>455</a>}}
+<a href=#456 id=456 data-nosnippet>456</a><span class="kw">pub type </span>PALIAS_ADM_COMMENT_INFORMATION = <span class="kw-2">*mut </span>ALIAS_ADM_COMMENT_INFORMATION;
+<a href=#457 id=457 data-nosnippet>457</a><span class="kw">pub const </span>ALIAS_ALL_NAME: ULONG = <span class="number">0x00000001</span>;
+<a href=#458 id=458 data-nosnippet>458</a><span class="kw">pub const </span>ALIAS_ALL_MEMBER_COUNT: ULONG = <span class="number">0x00000002</span>;
+<a href=#459 id=459 data-nosnippet>459</a><span class="kw">pub const </span>ALIAS_ALL_ADMIN_COMMENT: ULONG = <span class="number">0x00000004</span>;
+<a href=#460 id=460 data-nosnippet>460</a><span class="kw">pub const </span>ALIAS_ALL_SHELL_ADMIN_OBJECT_PROPERTIES: ULONG = <span class="number">0x00000008</span>;
+<a href=#461 id=461 data-nosnippet>461</a><span class="macro">STRUCT!</span>{<span class="kw">struct </span>ALIAS_EXTENDED_INFORMATION {
+<a href=#462 id=462 data-nosnippet>462</a>    WhichFields: ULONG,
+<a href=#463 id=463 data-nosnippet>463</a>    ShellAdminObjectProperties: SAM_SHELL_OBJECT_PROPERTIES,
+<a href=#464 id=464 data-nosnippet>464</a>}}
+<a href=#465 id=465 data-nosnippet>465</a><span class="kw">pub type </span>PALIAS_EXTENDED_INFORMATION = <span class="kw-2">*mut </span>ALIAS_EXTENDED_INFORMATION;
+<a href=#466 id=466 data-nosnippet>466</a><span class="macro">EXTERN!</span>{<span class="kw">extern </span><span class="string">"system" </span>{
+<a href=#467 id=467 data-nosnippet>467</a>    <span class="kw">fn </span>SamEnumerateAliasesInDomain(
+<a href=#468 id=468 data-nosnippet>468</a>        DomainHandle: SAM_HANDLE,
+<a href=#469 id=469 data-nosnippet>469</a>        EnumerationContext: PSAM_ENUMERATE_HANDLE,
+<a href=#470 id=470 data-nosnippet>470</a>        Buffer: <span class="kw-2">*mut </span>PVOID,
+<a href=#471 id=471 data-nosnippet>471</a>        PreferedMaximumLength: ULONG,
+<a href=#472 id=472 data-nosnippet>472</a>        CountReturned: PULONG,
+<a href=#473 id=473 data-nosnippet>473</a>    ) -&gt; NTSTATUS;
+<a href=#474 id=474 data-nosnippet>474</a>    <span class="kw">fn </span>SamCreateAliasInDomain(
+<a href=#475 id=475 data-nosnippet>475</a>        DomainHandle: SAM_HANDLE,
+<a href=#476 id=476 data-nosnippet>476</a>        AccountName: PUNICODE_STRING,
+<a href=#477 id=477 data-nosnippet>477</a>        DesiredAccess: ACCESS_MASK,
+<a href=#478 id=478 data-nosnippet>478</a>        AliasHandle: PSAM_HANDLE,
+<a href=#479 id=479 data-nosnippet>479</a>        RelativeId: PULONG,
+<a href=#480 id=480 data-nosnippet>480</a>    ) -&gt; NTSTATUS;
+<a href=#481 id=481 data-nosnippet>481</a>    <span class="kw">fn </span>SamOpenAlias(
+<a href=#482 id=482 data-nosnippet>482</a>        DomainHandle: SAM_HANDLE,
+<a href=#483 id=483 data-nosnippet>483</a>        DesiredAccess: ACCESS_MASK,
+<a href=#484 id=484 data-nosnippet>484</a>        AliasId: ULONG,
+<a href=#485 id=485 data-nosnippet>485</a>        AliasHandle: PSAM_HANDLE,
+<a href=#486 id=486 data-nosnippet>486</a>    ) -&gt; NTSTATUS;
+<a href=#487 id=487 data-nosnippet>487</a>    <span class="kw">fn </span>SamDeleteAlias(
+<a href=#488 id=488 data-nosnippet>488</a>        AliasHandle: SAM_HANDLE,
+<a href=#489 id=489 data-nosnippet>489</a>    ) -&gt; NTSTATUS;
+<a href=#490 id=490 data-nosnippet>490</a>    <span class="kw">fn </span>SamQueryInformationAlias(
+<a href=#491 id=491 data-nosnippet>491</a>        AliasHandle: SAM_HANDLE,
+<a href=#492 id=492 data-nosnippet>492</a>        AliasInformationClass: ALIAS_INFORMATION_CLASS,
+<a href=#493 id=493 data-nosnippet>493</a>        Buffer: <span class="kw-2">*mut </span>PVOID,
+<a href=#494 id=494 data-nosnippet>494</a>    ) -&gt; NTSTATUS;
+<a href=#495 id=495 data-nosnippet>495</a>    <span class="kw">fn </span>SamSetInformationAlias(
+<a href=#496 id=496 data-nosnippet>496</a>        AliasHandle: SAM_HANDLE,
+<a href=#497 id=497 data-nosnippet>497</a>        AliasInformationClass: ALIAS_INFORMATION_CLASS,
+<a href=#498 id=498 data-nosnippet>498</a>        Buffer: PVOID,
+<a href=#499 id=499 data-nosnippet>499</a>    ) -&gt; NTSTATUS;
+<a href=#500 id=500 data-nosnippet>500</a>    <span class="kw">fn </span>SamAddMemberToAlias(
+<a href=#501 id=501 data-nosnippet>501</a>        AliasHandle: SAM_HANDLE,
+<a href=#502 id=502 data-nosnippet>502</a>        MemberId: PSID,
+<a href=#503 id=503 data-nosnippet>503</a>    ) -&gt; NTSTATUS;
+<a href=#504 id=504 data-nosnippet>504</a>    <span class="kw">fn </span>SamAddMultipleMembersToAlias(
+<a href=#505 id=505 data-nosnippet>505</a>        AliasHandle: SAM_HANDLE,
+<a href=#506 id=506 data-nosnippet>506</a>        MemberIds: <span class="kw-2">*mut </span>PSID,
+<a href=#507 id=507 data-nosnippet>507</a>        MemberCount: ULONG,
+<a href=#508 id=508 data-nosnippet>508</a>    ) -&gt; NTSTATUS;
+<a href=#509 id=509 data-nosnippet>509</a>    <span class="kw">fn </span>SamRemoveMemberFromAlias(
+<a href=#510 id=510 data-nosnippet>510</a>        AliasHandle: SAM_HANDLE,
+<a href=#511 id=511 data-nosnippet>511</a>        MemberId: PSID,
+<a href=#512 id=512 data-nosnippet>512</a>    ) -&gt; NTSTATUS;
+<a href=#513 id=513 data-nosnippet>513</a>    <span class="kw">fn </span>SamRemoveMultipleMembersFromAlias(
+<a href=#514 id=514 data-nosnippet>514</a>        AliasHandle: SAM_HANDLE,
+<a href=#515 id=515 data-nosnippet>515</a>        MemberIds: <span class="kw-2">*mut </span>PSID,
+<a href=#516 id=516 data-nosnippet>516</a>        MemberCount: ULONG,
+<a href=#517 id=517 data-nosnippet>517</a>    ) -&gt; NTSTATUS;
+<a href=#518 id=518 data-nosnippet>518</a>    <span class="kw">fn </span>SamGetMembersInAlias(
+<a href=#519 id=519 data-nosnippet>519</a>        AliasHandle: SAM_HANDLE,
+<a href=#520 id=520 data-nosnippet>520</a>        MemberIds: <span class="kw-2">*mut *mut </span>PSID,
+<a href=#521 id=521 data-nosnippet>521</a>        MemberCount: PULONG,
+<a href=#522 id=522 data-nosnippet>522</a>    ) -&gt; NTSTATUS;
+<a href=#523 id=523 data-nosnippet>523</a>    <span class="kw">fn </span>SamGetAliasMembership(
+<a href=#524 id=524 data-nosnippet>524</a>        DomainHandle: SAM_HANDLE,
+<a href=#525 id=525 data-nosnippet>525</a>        PassedCount: ULONG,
+<a href=#526 id=526 data-nosnippet>526</a>        Sids: <span class="kw-2">*mut </span>PSID,
+<a href=#527 id=527 data-nosnippet>527</a>        MembershipCount: PULONG,
+<a href=#528 id=528 data-nosnippet>528</a>        Aliases: <span class="kw-2">*mut </span>PULONG,
+<a href=#529 id=529 data-nosnippet>529</a>    ) -&gt; NTSTATUS;
+<a href=#530 id=530 data-nosnippet>530</a>}}
+<a href=#531 id=531 data-nosnippet>531</a><span class="kw">pub const </span>GROUP_TYPE_BUILTIN_LOCAL_GROUP: u32 = <span class="number">0x00000001</span>;
+<a href=#532 id=532 data-nosnippet>532</a><span class="kw">pub const </span>GROUP_TYPE_ACCOUNT_GROUP: u32 = <span class="number">0x00000002</span>;
+<a href=#533 id=533 data-nosnippet>533</a><span class="kw">pub const </span>GROUP_TYPE_RESOURCE_GROUP: u32 = <span class="number">0x00000004</span>;
+<a href=#534 id=534 data-nosnippet>534</a><span class="kw">pub const </span>GROUP_TYPE_UNIVERSAL_GROUP: u32 = <span class="number">0x00000008</span>;
+<a href=#535 id=535 data-nosnippet>535</a><span class="kw">pub const </span>GROUP_TYPE_APP_BASIC_GROUP: u32 = <span class="number">0x00000010</span>;
+<a href=#536 id=536 data-nosnippet>536</a><span class="kw">pub const </span>GROUP_TYPE_APP_QUERY_GROUP: u32 = <span class="number">0x00000020</span>;
+<a href=#537 id=537 data-nosnippet>537</a><span class="kw">pub const </span>GROUP_TYPE_SECURITY_ENABLED: u32 = <span class="number">0x80000000</span>;
+<a href=#538 id=538 data-nosnippet>538</a><span class="kw">pub const </span>GROUP_TYPE_RESOURCE_BEHAVOIR: u32 =
+<a href=#539 id=539 data-nosnippet>539</a>    GROUP_TYPE_RESOURCE_GROUP | GROUP_TYPE_APP_BASIC_GROUP | GROUP_TYPE_APP_QUERY_GROUP;
+<a href=#540 id=540 data-nosnippet>540</a><span class="kw">pub const </span>USER_READ_GENERAL: DWORD = <span class="number">0x0001</span>;
+<a href=#541 id=541 data-nosnippet>541</a><span class="kw">pub const </span>USER_READ_PREFERENCES: DWORD = <span class="number">0x0002</span>;
+<a href=#542 id=542 data-nosnippet>542</a><span class="kw">pub const </span>USER_WRITE_PREFERENCES: DWORD = <span class="number">0x0004</span>;
+<a href=#543 id=543 data-nosnippet>543</a><span class="kw">pub const </span>USER_READ_LOGON: DWORD = <span class="number">0x0008</span>;
+<a href=#544 id=544 data-nosnippet>544</a><span class="kw">pub const </span>USER_READ_ACCOUNT: DWORD = <span class="number">0x0010</span>;
+<a href=#545 id=545 data-nosnippet>545</a><span class="kw">pub const </span>USER_WRITE_ACCOUNT: DWORD = <span class="number">0x0020</span>;
+<a href=#546 id=546 data-nosnippet>546</a><span class="kw">pub const </span>USER_CHANGE_PASSWORD: DWORD = <span class="number">0x0040</span>;
+<a href=#547 id=547 data-nosnippet>547</a><span class="kw">pub const </span>USER_FORCE_PASSWORD_CHANGE: DWORD = <span class="number">0x0080</span>;
+<a href=#548 id=548 data-nosnippet>548</a><span class="kw">pub const </span>USER_LIST_GROUPS: DWORD = <span class="number">0x0100</span>;
+<a href=#549 id=549 data-nosnippet>549</a><span class="kw">pub const </span>USER_READ_GROUP_INFORMATION: DWORD = <span class="number">0x0200</span>;
+<a href=#550 id=550 data-nosnippet>550</a><span class="kw">pub const </span>USER_WRITE_GROUP_INFORMATION: DWORD = <span class="number">0x0400</span>;
+<a href=#551 id=551 data-nosnippet>551</a><span class="kw">pub const </span>USER_ALL_ACCESS: DWORD = STANDARD_RIGHTS_REQUIRED | USER_READ_PREFERENCES
+<a href=#552 id=552 data-nosnippet>552</a>    | USER_READ_LOGON | USER_LIST_GROUPS | USER_READ_GROUP_INFORMATION | USER_WRITE_PREFERENCES
+<a href=#553 id=553 data-nosnippet>553</a>    | USER_CHANGE_PASSWORD | USER_FORCE_PASSWORD_CHANGE | USER_READ_GENERAL | USER_READ_ACCOUNT
+<a href=#554 id=554 data-nosnippet>554</a>    | USER_WRITE_ACCOUNT | USER_WRITE_GROUP_INFORMATION;
+<a href=#555 id=555 data-nosnippet>555</a><span class="kw">pub const </span>USER_READ: DWORD = STANDARD_RIGHTS_READ | USER_READ_PREFERENCES | USER_READ_LOGON
+<a href=#556 id=556 data-nosnippet>556</a>    | USER_READ_ACCOUNT | USER_LIST_GROUPS | USER_READ_GROUP_INFORMATION;
+<a href=#557 id=557 data-nosnippet>557</a><span class="kw">pub const </span>USER_WRITE: DWORD =
+<a href=#558 id=558 data-nosnippet>558</a>    STANDARD_RIGHTS_WRITE | USER_WRITE_PREFERENCES | USER_CHANGE_PASSWORD;
+<a href=#559 id=559 data-nosnippet>559</a><span class="kw">pub const </span>USER_EXECUTE: DWORD = STANDARD_RIGHTS_EXECUTE | USER_READ_GENERAL | USER_CHANGE_PASSWORD;
+<a href=#560 id=560 data-nosnippet>560</a><span class="macro">ENUM!</span>{<span class="kw">enum </span>USER_INFORMATION_CLASS {
+<a href=#561 id=561 data-nosnippet>561</a>    UserGeneralInformation = <span class="number">1</span>,
+<a href=#562 id=562 data-nosnippet>562</a>    UserPreferencesInformation = <span class="number">2</span>,
+<a href=#563 id=563 data-nosnippet>563</a>    UserLogonInformation = <span class="number">3</span>,
+<a href=#564 id=564 data-nosnippet>564</a>    UserLogonHoursInformation = <span class="number">4</span>,
+<a href=#565 id=565 data-nosnippet>565</a>    UserAccountInformation = <span class="number">5</span>,
+<a href=#566 id=566 data-nosnippet>566</a>    UserNameInformation = <span class="number">6</span>,
+<a href=#567 id=567 data-nosnippet>567</a>    UserAccountNameInformation = <span class="number">7</span>,
+<a href=#568 id=568 data-nosnippet>568</a>    UserFullNameInformation = <span class="number">8</span>,
+<a href=#569 id=569 data-nosnippet>569</a>    UserPrimaryGroupInformation = <span class="number">9</span>,
+<a href=#570 id=570 data-nosnippet>570</a>    UserHomeInformation = <span class="number">10</span>,
+<a href=#571 id=571 data-nosnippet>571</a>    UserScriptInformation = <span class="number">11</span>,
+<a href=#572 id=572 data-nosnippet>572</a>    UserProfileInformation = <span class="number">12</span>,
+<a href=#573 id=573 data-nosnippet>573</a>    UserAdminCommentInformation = <span class="number">13</span>,
+<a href=#574 id=574 data-nosnippet>574</a>    UserWorkStationsInformation = <span class="number">14</span>,
+<a href=#575 id=575 data-nosnippet>575</a>    UserSetPasswordInformation = <span class="number">15</span>,
+<a href=#576 id=576 data-nosnippet>576</a>    UserControlInformation = <span class="number">16</span>,
+<a href=#577 id=577 data-nosnippet>577</a>    UserExpiresInformation = <span class="number">17</span>,
+<a href=#578 id=578 data-nosnippet>578</a>    UserInternal1Information = <span class="number">18</span>,
+<a href=#579 id=579 data-nosnippet>579</a>    UserInternal2Information = <span class="number">19</span>,
+<a href=#580 id=580 data-nosnippet>580</a>    UserParametersInformation = <span class="number">20</span>,
+<a href=#581 id=581 data-nosnippet>581</a>    UserAllInformation = <span class="number">21</span>,
+<a href=#582 id=582 data-nosnippet>582</a>    UserInternal3Information = <span class="number">22</span>,
+<a href=#583 id=583 data-nosnippet>583</a>    UserInternal4Information = <span class="number">23</span>,
+<a href=#584 id=584 data-nosnippet>584</a>    UserInternal5Information = <span class="number">24</span>,
+<a href=#585 id=585 data-nosnippet>585</a>    UserInternal4InformationNew = <span class="number">25</span>,
+<a href=#586 id=586 data-nosnippet>586</a>    UserInternal5InformationNew = <span class="number">26</span>,
+<a href=#587 id=587 data-nosnippet>587</a>    UserInternal6Information = <span class="number">27</span>,
+<a href=#588 id=588 data-nosnippet>588</a>    UserExtendedInformation = <span class="number">28</span>,
+<a href=#589 id=589 data-nosnippet>589</a>    UserLogonUIInformation = <span class="number">29</span>,
+<a href=#590 id=590 data-nosnippet>590</a>}}
+<a href=#591 id=591 data-nosnippet>591</a><span class="kw">pub type </span>PUSER_INFORMATION_CLASS = <span class="kw-2">*mut </span>USER_INFORMATION_CLASS;
+<a href=#592 id=592 data-nosnippet>592</a><span class="kw">pub const </span>USER_ALL_USERNAME: ULONG = <span class="number">0x00000001</span>;
+<a href=#593 id=593 data-nosnippet>593</a><span class="kw">pub const </span>USER_ALL_FULLNAME: ULONG = <span class="number">0x00000002</span>;
+<a href=#594 id=594 data-nosnippet>594</a><span class="kw">pub const </span>USER_ALL_USERID: ULONG = <span class="number">0x00000004</span>;
+<a href=#595 id=595 data-nosnippet>595</a><span class="kw">pub const </span>USER_ALL_PRIMARYGROUPID: ULONG = <span class="number">0x00000008</span>;
+<a href=#596 id=596 data-nosnippet>596</a><span class="kw">pub const </span>USER_ALL_ADMINCOMMENT: ULONG = <span class="number">0x00000010</span>;
+<a href=#597 id=597 data-nosnippet>597</a><span class="kw">pub const </span>USER_ALL_USERCOMMENT: ULONG = <span class="number">0x00000020</span>;
+<a href=#598 id=598 data-nosnippet>598</a><span class="kw">pub const </span>USER_ALL_HOMEDIRECTORY: ULONG = <span class="number">0x00000040</span>;
+<a href=#599 id=599 data-nosnippet>599</a><span class="kw">pub const </span>USER_ALL_HOMEDIRECTORYDRIVE: ULONG = <span class="number">0x00000080</span>;
+<a href=#600 id=600 data-nosnippet>600</a><span class="kw">pub const </span>USER_ALL_SCRIPTPATH: ULONG = <span class="number">0x00000100</span>;
+<a href=#601 id=601 data-nosnippet>601</a><span class="kw">pub const </span>USER_ALL_PROFILEPATH: ULONG = <span class="number">0x00000200</span>;
+<a href=#602 id=602 data-nosnippet>602</a><span class="kw">pub const </span>USER_ALL_WORKSTATIONS: ULONG = <span class="number">0x00000400</span>;
+<a href=#603 id=603 data-nosnippet>603</a><span class="kw">pub const </span>USER_ALL_LASTLOGON: ULONG = <span class="number">0x00000800</span>;
+<a href=#604 id=604 data-nosnippet>604</a><span class="kw">pub const </span>USER_ALL_LASTLOGOFF: ULONG = <span class="number">0x00001000</span>;
+<a href=#605 id=605 data-nosnippet>605</a><span class="kw">pub const </span>USER_ALL_LOGONHOURS: ULONG = <span class="number">0x00002000</span>;
+<a href=#606 id=606 data-nosnippet>606</a><span class="kw">pub const </span>USER_ALL_BADPASSWORDCOUNT: ULONG = <span class="number">0x00004000</span>;
+<a href=#607 id=607 data-nosnippet>607</a><span class="kw">pub const </span>USER_ALL_LOGONCOUNT: ULONG = <span class="number">0x00008000</span>;
+<a href=#608 id=608 data-nosnippet>608</a><span class="kw">pub const </span>USER_ALL_PASSWORDCANCHANGE: ULONG = <span class="number">0x00010000</span>;
+<a href=#609 id=609 data-nosnippet>609</a><span class="kw">pub const </span>USER_ALL_PASSWORDMUSTCHANGE: ULONG = <span class="number">0x00020000</span>;
+<a href=#610 id=610 data-nosnippet>610</a><span class="kw">pub const </span>USER_ALL_PASSWORDLASTSET: ULONG = <span class="number">0x00040000</span>;
+<a href=#611 id=611 data-nosnippet>611</a><span class="kw">pub const </span>USER_ALL_ACCOUNTEXPIRES: ULONG = <span class="number">0x00080000</span>;
+<a href=#612 id=612 data-nosnippet>612</a><span class="kw">pub const </span>USER_ALL_USERACCOUNTCONTROL: ULONG = <span class="number">0x00100000</span>;
+<a href=#613 id=613 data-nosnippet>613</a><span class="kw">pub const </span>USER_ALL_PARAMETERS: ULONG = <span class="number">0x00200000</span>;
+<a href=#614 id=614 data-nosnippet>614</a><span class="kw">pub const </span>USER_ALL_COUNTRYCODE: ULONG = <span class="number">0x00400000</span>;
+<a href=#615 id=615 data-nosnippet>615</a><span class="kw">pub const </span>USER_ALL_CODEPAGE: ULONG = <span class="number">0x00800000</span>;
+<a href=#616 id=616 data-nosnippet>616</a><span class="kw">pub const </span>USER_ALL_NTPASSWORDPRESENT: ULONG = <span class="number">0x01000000</span>;
+<a href=#617 id=617 data-nosnippet>617</a><span class="kw">pub const </span>USER_ALL_LMPASSWORDPRESENT: ULONG = <span class="number">0x02000000</span>;
+<a href=#618 id=618 data-nosnippet>618</a><span class="kw">pub const </span>USER_ALL_PRIVATEDATA: ULONG = <span class="number">0x04000000</span>;
+<a href=#619 id=619 data-nosnippet>619</a><span class="kw">pub const </span>USER_ALL_PASSWORDEXPIRED: ULONG = <span class="number">0x08000000</span>;
+<a href=#620 id=620 data-nosnippet>620</a><span class="kw">pub const </span>USER_ALL_SECURITYDESCRIPTOR: ULONG = <span class="number">0x10000000</span>;
+<a href=#621 id=621 data-nosnippet>621</a><span class="kw">pub const </span>USER_ALL_OWFPASSWORD: ULONG = <span class="number">0x20000000</span>;
+<a href=#622 id=622 data-nosnippet>622</a><span class="kw">pub const </span>USER_ALL_UNDEFINED_MASK: ULONG = <span class="number">0xc0000000</span>;
+<a href=#623 id=623 data-nosnippet>623</a><span class="kw">pub const </span>USER_ALL_READ_GENERAL_MASK: ULONG = USER_ALL_USERNAME | USER_ALL_FULLNAME
+<a href=#624 id=624 data-nosnippet>624</a>    | USER_ALL_USERID | USER_ALL_PRIMARYGROUPID | USER_ALL_ADMINCOMMENT | USER_ALL_USERCOMMENT;
+<a href=#625 id=625 data-nosnippet>625</a><span class="kw">pub const </span>USER_ALL_READ_LOGON_MASK: ULONG = USER_ALL_HOMEDIRECTORY | USER_ALL_HOMEDIRECTORYDRIVE
+<a href=#626 id=626 data-nosnippet>626</a>    | USER_ALL_SCRIPTPATH | USER_ALL_PROFILEPATH | USER_ALL_WORKSTATIONS | USER_ALL_LASTLOGON
+<a href=#627 id=627 data-nosnippet>627</a>    | USER_ALL_LASTLOGOFF | USER_ALL_LOGONHOURS | USER_ALL_BADPASSWORDCOUNT | USER_ALL_LOGONCOUNT
+<a href=#628 id=628 data-nosnippet>628</a>    | USER_ALL_PASSWORDCANCHANGE | USER_ALL_PASSWORDMUSTCHANGE;
+<a href=#629 id=629 data-nosnippet>629</a><span class="kw">pub const </span>USER_ALL_READ_ACCOUNT_MASK: ULONG = USER_ALL_PASSWORDLASTSET | USER_ALL_ACCOUNTEXPIRES
+<a href=#630 id=630 data-nosnippet>630</a>    | USER_ALL_USERACCOUNTCONTROL | USER_ALL_PARAMETERS;
+<a href=#631 id=631 data-nosnippet>631</a><span class="kw">pub const </span>USER_ALL_READ_PREFERENCES_MASK: ULONG = USER_ALL_COUNTRYCODE | USER_ALL_CODEPAGE;
+<a href=#632 id=632 data-nosnippet>632</a><span class="kw">pub const </span>USER_ALL_READ_TRUSTED_MASK: ULONG = USER_ALL_NTPASSWORDPRESENT
+<a href=#633 id=633 data-nosnippet>633</a>    | USER_ALL_LMPASSWORDPRESENT | USER_ALL_PASSWORDEXPIRED | USER_ALL_SECURITYDESCRIPTOR
+<a href=#634 id=634 data-nosnippet>634</a>    | USER_ALL_PRIVATEDATA;
+<a href=#635 id=635 data-nosnippet>635</a><span class="kw">pub const </span>USER_ALL_READ_CANT_MASK: ULONG = USER_ALL_UNDEFINED_MASK;
+<a href=#636 id=636 data-nosnippet>636</a><span class="kw">pub const </span>USER_ALL_WRITE_ACCOUNT_MASK: ULONG = USER_ALL_USERNAME | USER_ALL_FULLNAME
+<a href=#637 id=637 data-nosnippet>637</a>    | USER_ALL_PRIMARYGROUPID | USER_ALL_HOMEDIRECTORY | USER_ALL_HOMEDIRECTORYDRIVE
+<a href=#638 id=638 data-nosnippet>638</a>    | USER_ALL_SCRIPTPATH | USER_ALL_PROFILEPATH | USER_ALL_ADMINCOMMENT | USER_ALL_WORKSTATIONS
+<a href=#639 id=639 data-nosnippet>639</a>    | USER_ALL_LOGONHOURS | USER_ALL_ACCOUNTEXPIRES | USER_ALL_USERACCOUNTCONTROL
+<a href=#640 id=640 data-nosnippet>640</a>    | USER_ALL_PARAMETERS;
+<a href=#641 id=641 data-nosnippet>641</a><span class="kw">pub const </span>USER_ALL_WRITE_PREFERENCES_MASK: ULONG =
+<a href=#642 id=642 data-nosnippet>642</a>    USER_ALL_USERCOMMENT | USER_ALL_COUNTRYCODE | USER_ALL_CODEPAGE;
+<a href=#643 id=643 data-nosnippet>643</a><span class="kw">pub const </span>USER_ALL_WRITE_FORCE_PASSWORD_CHANGE_MASK: ULONG =
+<a href=#644 id=644 data-nosnippet>644</a>    USER_ALL_NTPASSWORDPRESENT | USER_ALL_LMPASSWORDPRESENT | USER_ALL_PASSWORDEXPIRED;
+<a href=#645 id=645 data-nosnippet>645</a><span class="kw">pub const </span>USER_ALL_WRITE_TRUSTED_MASK: ULONG = USER_ALL_LASTLOGON | USER_ALL_LASTLOGOFF
+<a href=#646 id=646 data-nosnippet>646</a>    | USER_ALL_BADPASSWORDCOUNT | USER_ALL_LOGONCOUNT | USER_ALL_PASSWORDLASTSET
+<a href=#647 id=647 data-nosnippet>647</a>    | USER_ALL_SECURITYDESCRIPTOR | USER_ALL_PRIVATEDATA;
+<a href=#648 id=648 data-nosnippet>648</a><span class="kw">pub const </span>USER_ALL_WRITE_CANT_MASK: ULONG = USER_ALL_USERID | USER_ALL_PASSWORDCANCHANGE
+<a href=#649 id=649 data-nosnippet>649</a>    | USER_ALL_PASSWORDMUSTCHANGE | USER_ALL_UNDEFINED_MASK;
+<a href=#650 id=650 data-nosnippet>650</a><span class="macro">STRUCT!</span>{<span class="kw">struct </span>USER_GENERAL_INFORMATION {
+<a href=#651 id=651 data-nosnippet>651</a>    UserName: UNICODE_STRING,
+<a href=#652 id=652 data-nosnippet>652</a>    FullName: UNICODE_STRING,
+<a href=#653 id=653 data-nosnippet>653</a>    PrimaryGroupId: ULONG,
+<a href=#654 id=654 data-nosnippet>654</a>    AdminComment: UNICODE_STRING,
+<a href=#655 id=655 data-nosnippet>655</a>    UserComment: UNICODE_STRING,
+<a href=#656 id=656 data-nosnippet>656</a>}}
+<a href=#657 id=657 data-nosnippet>657</a><span class="kw">pub type </span>PUSER_GENERAL_INFORMATION = <span class="kw-2">*mut </span>USER_GENERAL_INFORMATION;
+<a href=#658 id=658 data-nosnippet>658</a><span class="macro">STRUCT!</span>{<span class="kw">struct </span>USER_PREFERENCES_INFORMATION {
+<a href=#659 id=659 data-nosnippet>659</a>    UserComment: UNICODE_STRING,
+<a href=#660 id=660 data-nosnippet>660</a>    Reserved1: UNICODE_STRING,
+<a href=#661 id=661 data-nosnippet>661</a>    CountryCode: USHORT,
+<a href=#662 id=662 data-nosnippet>662</a>    CodePage: USHORT,
+<a href=#663 id=663 data-nosnippet>663</a>}}
+<a href=#664 id=664 data-nosnippet>664</a><span class="kw">pub type </span>PUSER_PREFERENCES_INFORMATION = <span class="kw-2">*mut </span>USER_PREFERENCES_INFORMATION;
+<a href=#665 id=665 data-nosnippet>665</a><span class="macro">STRUCT!</span>{<span class="kw">struct </span>USER_PARAMETERS_INFORMATION {
+<a href=#666 id=666 data-nosnippet>666</a>    Parameters: UNICODE_STRING,
+<a href=#667 id=667 data-nosnippet>667</a>}}
+<a href=#668 id=668 data-nosnippet>668</a><span class="kw">pub type </span>PUSER_PARAMETERS_INFORMATION = <span class="kw-2">*mut </span>USER_PARAMETERS_INFORMATION;
+<a href=#669 id=669 data-nosnippet>669</a><span class="macro">STRUCT!</span>{<span class="attr">#[repr(packed(<span class="number">4</span>))] </span><span class="kw">struct </span>USER_LOGON_INFORMATION {
+<a href=#670 id=670 data-nosnippet>670</a>    UserName: UNICODE_STRING,
+<a href=#671 id=671 data-nosnippet>671</a>    FullName: UNICODE_STRING,
+<a href=#672 id=672 data-nosnippet>672</a>    UserId: ULONG,
+<a href=#673 id=673 data-nosnippet>673</a>    PrimaryGroupId: ULONG,
+<a href=#674 id=674 data-nosnippet>674</a>    HomeDirectory: UNICODE_STRING,
+<a href=#675 id=675 data-nosnippet>675</a>    HomeDirectoryDrive: UNICODE_STRING,
+<a href=#676 id=676 data-nosnippet>676</a>    ScriptPath: UNICODE_STRING,
+<a href=#677 id=677 data-nosnippet>677</a>    ProfilePath: UNICODE_STRING,
+<a href=#678 id=678 data-nosnippet>678</a>    WorkStations: UNICODE_STRING,
+<a href=#679 id=679 data-nosnippet>679</a>    LastLogon: LARGE_INTEGER,
+<a href=#680 id=680 data-nosnippet>680</a>    LastLogoff: LARGE_INTEGER,
+<a href=#681 id=681 data-nosnippet>681</a>    PasswordLastSet: LARGE_INTEGER,
+<a href=#682 id=682 data-nosnippet>682</a>    PasswordCanChange: LARGE_INTEGER,
+<a href=#683 id=683 data-nosnippet>683</a>    PasswordMustChange: LARGE_INTEGER,
+<a href=#684 id=684 data-nosnippet>684</a>    LogonHours: LOGON_HOURS,
+<a href=#685 id=685 data-nosnippet>685</a>    BadPasswordCount: USHORT,
+<a href=#686 id=686 data-nosnippet>686</a>    LogonCount: USHORT,
+<a href=#687 id=687 data-nosnippet>687</a>    UserAccountControl: ULONG,
+<a href=#688 id=688 data-nosnippet>688</a>}}
+<a href=#689 id=689 data-nosnippet>689</a><span class="kw">pub type </span>PUSER_LOGON_INFORMATION = <span class="kw-2">*mut </span>USER_LOGON_INFORMATION;
+<a href=#690 id=690 data-nosnippet>690</a><span class="macro">STRUCT!</span>{<span class="attr">#[repr(packed(<span class="number">4</span>))] </span><span class="kw">struct </span>USER_ACCOUNT_INFORMATION {
+<a href=#691 id=691 data-nosnippet>691</a>    UserName: UNICODE_STRING,
+<a href=#692 id=692 data-nosnippet>692</a>    FullName: UNICODE_STRING,
+<a href=#693 id=693 data-nosnippet>693</a>    UserId: ULONG,
+<a href=#694 id=694 data-nosnippet>694</a>    PrimaryGroupId: ULONG,
+<a href=#695 id=695 data-nosnippet>695</a>    HomeDirectory: UNICODE_STRING,
+<a href=#696 id=696 data-nosnippet>696</a>    HomeDirectoryDrive: UNICODE_STRING,
+<a href=#697 id=697 data-nosnippet>697</a>    ScriptPath: UNICODE_STRING,
+<a href=#698 id=698 data-nosnippet>698</a>    ProfilePath: UNICODE_STRING,
+<a href=#699 id=699 data-nosnippet>699</a>    AdminComment: UNICODE_STRING,
+<a href=#700 id=700 data-nosnippet>700</a>    WorkStations: UNICODE_STRING,
+<a href=#701 id=701 data-nosnippet>701</a>    LastLogon: LARGE_INTEGER,
+<a href=#702 id=702 data-nosnippet>702</a>    LastLogoff: LARGE_INTEGER,
+<a href=#703 id=703 data-nosnippet>703</a>    LogonHours: LOGON_HOURS,
+<a href=#704 id=704 data-nosnippet>704</a>    BadPasswordCount: USHORT,
+<a href=#705 id=705 data-nosnippet>705</a>    LogonCount: USHORT,
+<a href=#706 id=706 data-nosnippet>706</a>    PasswordLastSet: LARGE_INTEGER,
+<a href=#707 id=707 data-nosnippet>707</a>    AccountExpires: LARGE_INTEGER,
+<a href=#708 id=708 data-nosnippet>708</a>    UserAccountControl: ULONG,
+<a href=#709 id=709 data-nosnippet>709</a>}}
+<a href=#710 id=710 data-nosnippet>710</a><span class="kw">pub type </span>PUSER_ACCOUNT_INFORMATION = <span class="kw-2">*mut </span>USER_ACCOUNT_INFORMATION;
+<a href=#711 id=711 data-nosnippet>711</a><span class="macro">STRUCT!</span>{<span class="kw">struct </span>USER_ACCOUNT_NAME_INFORMATION {
+<a href=#712 id=712 data-nosnippet>712</a>    UserName: UNICODE_STRING,
+<a href=#713 id=713 data-nosnippet>713</a>}}
+<a href=#714 id=714 data-nosnippet>714</a><span class="kw">pub type </span>PUSER_ACCOUNT_NAME_INFORMATION = <span class="kw-2">*mut </span>USER_ACCOUNT_NAME_INFORMATION;
+<a href=#715 id=715 data-nosnippet>715</a><span class="macro">STRUCT!</span>{<span class="kw">struct </span>USER_FULL_NAME_INFORMATION {
+<a href=#716 id=716 data-nosnippet>716</a>    FullName: UNICODE_STRING,
+<a href=#717 id=717 data-nosnippet>717</a>}}
+<a href=#718 id=718 data-nosnippet>718</a><span class="kw">pub type </span>PUSER_FULL_NAME_INFORMATION = <span class="kw-2">*mut </span>USER_FULL_NAME_INFORMATION;
+<a href=#719 id=719 data-nosnippet>719</a><span class="macro">STRUCT!</span>{<span class="kw">struct </span>USER_NAME_INFORMATION {
+<a href=#720 id=720 data-nosnippet>720</a>    UserName: UNICODE_STRING,
+<a href=#721 id=721 data-nosnippet>721</a>    FullName: UNICODE_STRING,
+<a href=#722 id=722 data-nosnippet>722</a>}}
+<a href=#723 id=723 data-nosnippet>723</a><span class="kw">pub type </span>PUSER_NAME_INFORMATION = <span class="kw-2">*mut </span>USER_NAME_INFORMATION;
+<a href=#724 id=724 data-nosnippet>724</a><span class="macro">STRUCT!</span>{<span class="kw">struct </span>USER_PRIMARY_GROUP_INFORMATION {
+<a href=#725 id=725 data-nosnippet>725</a>    PrimaryGroupId: ULONG,
+<a href=#726 id=726 data-nosnippet>726</a>}}
+<a href=#727 id=727 data-nosnippet>727</a><span class="kw">pub type </span>PUSER_PRIMARY_GROUP_INFORMATION = <span class="kw-2">*mut </span>USER_PRIMARY_GROUP_INFORMATION;
+<a href=#728 id=728 data-nosnippet>728</a><span class="macro">STRUCT!</span>{<span class="kw">struct </span>USER_HOME_INFORMATION {
+<a href=#729 id=729 data-nosnippet>729</a>    HomeDirectory: UNICODE_STRING,
+<a href=#730 id=730 data-nosnippet>730</a>    HomeDirectoryDrive: UNICODE_STRING,
+<a href=#731 id=731 data-nosnippet>731</a>}}
+<a href=#732 id=732 data-nosnippet>732</a><span class="kw">pub type </span>PUSER_HOME_INFORMATION = <span class="kw-2">*mut </span>USER_HOME_INFORMATION;
+<a href=#733 id=733 data-nosnippet>733</a><span class="macro">STRUCT!</span>{<span class="kw">struct </span>USER_SCRIPT_INFORMATION {
+<a href=#734 id=734 data-nosnippet>734</a>    ScriptPath: UNICODE_STRING,
+<a href=#735 id=735 data-nosnippet>735</a>}}
+<a href=#736 id=736 data-nosnippet>736</a><span class="kw">pub type </span>PUSER_SCRIPT_INFORMATION = <span class="kw-2">*mut </span>USER_SCRIPT_INFORMATION;
+<a href=#737 id=737 data-nosnippet>737</a><span class="macro">STRUCT!</span>{<span class="kw">struct </span>USER_PROFILE_INFORMATION {
+<a href=#738 id=738 data-nosnippet>738</a>    ProfilePath: UNICODE_STRING,
+<a href=#739 id=739 data-nosnippet>739</a>}}
+<a href=#740 id=740 data-nosnippet>740</a><span class="kw">pub type </span>PUSER_PROFILE_INFORMATION = <span class="kw-2">*mut </span>USER_PROFILE_INFORMATION;
+<a href=#741 id=741 data-nosnippet>741</a><span class="macro">STRUCT!</span>{<span class="kw">struct </span>USER_ADMIN_COMMENT_INFORMATION {
+<a href=#742 id=742 data-nosnippet>742</a>    AdminComment: UNICODE_STRING,
+<a href=#743 id=743 data-nosnippet>743</a>}}
+<a href=#744 id=744 data-nosnippet>744</a><span class="kw">pub type </span>PUSER_ADMIN_COMMENT_INFORMATION = <span class="kw-2">*mut </span>USER_ADMIN_COMMENT_INFORMATION;
+<a href=#745 id=745 data-nosnippet>745</a><span class="macro">STRUCT!</span>{<span class="kw">struct </span>USER_WORKSTATIONS_INFORMATION {
+<a href=#746 id=746 data-nosnippet>746</a>    WorkStations: UNICODE_STRING,
+<a href=#747 id=747 data-nosnippet>747</a>}}
+<a href=#748 id=748 data-nosnippet>748</a><span class="kw">pub type </span>PUSER_WORKSTATIONS_INFORMATION = <span class="kw-2">*mut </span>USER_WORKSTATIONS_INFORMATION;
+<a href=#749 id=749 data-nosnippet>749</a><span class="macro">STRUCT!</span>{<span class="kw">struct </span>USER_SET_PASSWORD_INFORMATION {
+<a href=#750 id=750 data-nosnippet>750</a>    Password: UNICODE_STRING,
+<a href=#751 id=751 data-nosnippet>751</a>    PasswordExpired: BOOLEAN,
+<a href=#752 id=752 data-nosnippet>752</a>}}
+<a href=#753 id=753 data-nosnippet>753</a><span class="kw">pub type </span>PUSER_SET_PASSWORD_INFORMATION = <span class="kw-2">*mut </span>USER_SET_PASSWORD_INFORMATION;
+<a href=#754 id=754 data-nosnippet>754</a><span class="macro">STRUCT!</span>{<span class="kw">struct </span>USER_CONTROL_INFORMATION {
+<a href=#755 id=755 data-nosnippet>755</a>    UserAccountControl: ULONG,
+<a href=#756 id=756 data-nosnippet>756</a>}}
+<a href=#757 id=757 data-nosnippet>757</a><span class="kw">pub type </span>PUSER_CONTROL_INFORMATION = <span class="kw-2">*mut </span>USER_CONTROL_INFORMATION;
+<a href=#758 id=758 data-nosnippet>758</a><span class="macro">STRUCT!</span>{<span class="kw">struct </span>USER_EXPIRES_INFORMATION {
+<a href=#759 id=759 data-nosnippet>759</a>    AccountExpires: LARGE_INTEGER,
+<a href=#760 id=760 data-nosnippet>760</a>}}
+<a href=#761 id=761 data-nosnippet>761</a><span class="kw">pub type </span>PUSER_EXPIRES_INFORMATION = <span class="kw-2">*mut </span>USER_EXPIRES_INFORMATION;
+<a href=#762 id=762 data-nosnippet>762</a><span class="macro">STRUCT!</span>{<span class="kw">struct </span>USER_LOGON_HOURS_INFORMATION {
+<a href=#763 id=763 data-nosnippet>763</a>    LogonHours: LOGON_HOURS,
+<a href=#764 id=764 data-nosnippet>764</a>}}
+<a href=#765 id=765 data-nosnippet>765</a><span class="kw">pub type </span>PUSER_LOGON_HOURS_INFORMATION = <span class="kw-2">*mut </span>USER_LOGON_HOURS_INFORMATION;
+<a href=#766 id=766 data-nosnippet>766</a><span class="kw">pub type </span>SAM_USER_TILE = SAM_BYTE_ARRAY_32K;
+<a href=#767 id=767 data-nosnippet>767</a><span class="kw">pub type </span>PSAM_USER_TILE = <span class="kw-2">*mut </span>SAM_BYTE_ARRAY_32K;
+<a href=#768 id=768 data-nosnippet>768</a><span class="kw">pub const </span>USER_EXTENDED_FIELD_USER_TILE: ULONG = <span class="number">0x00001000</span>;
+<a href=#769 id=769 data-nosnippet>769</a><span class="kw">pub const </span>USER_EXTENDED_FIELD_PASSWORD_HINT: ULONG = <span class="number">0x00002000</span>;
+<a href=#770 id=770 data-nosnippet>770</a><span class="kw">pub const </span>USER_EXTENDED_FIELD_DONT_SHOW_IN_LOGON_UI: ULONG = <span class="number">0x00004000</span>;
+<a href=#771 id=771 data-nosnippet>771</a><span class="kw">pub const </span>USER_EXTENDED_FIELD_SHELL_ADMIN_OBJECT_PROPERTIES: ULONG = <span class="number">0x00008000</span>;
+<a href=#772 id=772 data-nosnippet>772</a><span class="macro">STRUCT!</span>{<span class="kw">struct </span>USER_EXTENDED_INFORMATION {
+<a href=#773 id=773 data-nosnippet>773</a>    ExtendedWhichFields: ULONG,
+<a href=#774 id=774 data-nosnippet>774</a>    UserTile: SAM_USER_TILE,
+<a href=#775 id=775 data-nosnippet>775</a>    PasswordHint: UNICODE_STRING,
+<a href=#776 id=776 data-nosnippet>776</a>    DontShowInLogonUI: BOOLEAN,
+<a href=#777 id=777 data-nosnippet>777</a>    ShellAdminObjectProperties: SAM_SHELL_OBJECT_PROPERTIES,
+<a href=#778 id=778 data-nosnippet>778</a>}}
+<a href=#779 id=779 data-nosnippet>779</a><span class="kw">pub type </span>PUSER_EXTENDED_INFORMATION = <span class="kw-2">*mut </span>USER_EXTENDED_INFORMATION;
+<a href=#780 id=780 data-nosnippet>780</a><span class="macro">STRUCT!</span>{<span class="kw">struct </span>USER_LOGON_UI_INFORMATION {
+<a href=#781 id=781 data-nosnippet>781</a>    PasswordIsBlank: BOOLEAN,
+<a href=#782 id=782 data-nosnippet>782</a>    AccountIsDisabled: BOOLEAN,
+<a href=#783 id=783 data-nosnippet>783</a>}}
+<a href=#784 id=784 data-nosnippet>784</a><span class="kw">pub type </span>PUSER_LOGON_UI_INFORMATION = <span class="kw-2">*mut </span>USER_LOGON_UI_INFORMATION;
+<a href=#785 id=785 data-nosnippet>785</a><span class="macro">STRUCT!</span>{<span class="kw">struct </span>USER_PWD_CHANGE_FAILURE_INFORMATION {
+<a href=#786 id=786 data-nosnippet>786</a>    ExtendedFailureReason: ULONG,
+<a href=#787 id=787 data-nosnippet>787</a>    FilterModuleName: UNICODE_STRING,
+<a href=#788 id=788 data-nosnippet>788</a>}}
+<a href=#789 id=789 data-nosnippet>789</a><span class="kw">pub type </span>PUSER_PWD_CHANGE_FAILURE_INFORMATION = <span class="kw-2">*mut </span>USER_PWD_CHANGE_FAILURE_INFORMATION;
+<a href=#790 id=790 data-nosnippet>790</a><span class="kw">pub const </span>SAM_PWD_CHANGE_NO_ERROR: u32 = <span class="number">0</span>;
+<a href=#791 id=791 data-nosnippet>791</a><span class="kw">pub const </span>SAM_PWD_CHANGE_PASSWORD_TOO_SHORT: u32 = <span class="number">1</span>;
+<a href=#792 id=792 data-nosnippet>792</a><span class="kw">pub const </span>SAM_PWD_CHANGE_PWD_IN_HISTORY: u32 = <span class="number">2</span>;
+<a href=#793 id=793 data-nosnippet>793</a><span class="kw">pub const </span>SAM_PWD_CHANGE_USERNAME_IN_PASSWORD: u32 = <span class="number">3</span>;
+<a href=#794 id=794 data-nosnippet>794</a><span class="kw">pub const </span>SAM_PWD_CHANGE_FULLNAME_IN_PASSWORD: u32 = <span class="number">4</span>;
+<a href=#795 id=795 data-nosnippet>795</a><span class="kw">pub const </span>SAM_PWD_CHANGE_NOT_COMPLEX: u32 = <span class="number">5</span>;
+<a href=#796 id=796 data-nosnippet>796</a><span class="kw">pub const </span>SAM_PWD_CHANGE_MACHINE_PASSWORD_NOT_DEFAULT: u32 = <span class="number">6</span>;
+<a href=#797 id=797 data-nosnippet>797</a><span class="kw">pub const </span>SAM_PWD_CHANGE_FAILED_BY_FILTER: u32 = <span class="number">7</span>;
+<a href=#798 id=798 data-nosnippet>798</a><span class="kw">pub const </span>SAM_PWD_CHANGE_PASSWORD_TOO_LONG: u32 = <span class="number">8</span>;
+<a href=#799 id=799 data-nosnippet>799</a><span class="kw">pub const </span>SAM_PWD_CHANGE_FAILURE_REASON_MAX: u32 = <span class="number">8</span>;
+<a href=#800 id=800 data-nosnippet>800</a><span class="macro">EXTERN!</span>{<span class="kw">extern </span><span class="string">"system" </span>{
+<a href=#801 id=801 data-nosnippet>801</a>    <span class="kw">fn </span>SamEnumerateUsersInDomain(
+<a href=#802 id=802 data-nosnippet>802</a>        DomainHandle: SAM_HANDLE,
+<a href=#803 id=803 data-nosnippet>803</a>        EnumerationContext: PSAM_ENUMERATE_HANDLE,
+<a href=#804 id=804 data-nosnippet>804</a>        UserAccountControl: ULONG,
+<a href=#805 id=805 data-nosnippet>805</a>        Buffer: <span class="kw-2">*mut </span>PVOID,
+<a href=#806 id=806 data-nosnippet>806</a>        PreferedMaximumLength: ULONG,
+<a href=#807 id=807 data-nosnippet>807</a>        CountReturned: PULONG,
+<a href=#808 id=808 data-nosnippet>808</a>    ) -&gt; NTSTATUS;
+<a href=#809 id=809 data-nosnippet>809</a>    <span class="kw">fn </span>SamCreateUserInDomain(
+<a href=#810 id=810 data-nosnippet>810</a>        DomainHandle: SAM_HANDLE,
+<a href=#811 id=811 data-nosnippet>811</a>        AccountName: PUNICODE_STRING,
+<a href=#812 id=812 data-nosnippet>812</a>        DesiredAccess: ACCESS_MASK,
+<a href=#813 id=813 data-nosnippet>813</a>        UserHandle: PSAM_HANDLE,
+<a href=#814 id=814 data-nosnippet>814</a>        RelativeId: PULONG,
+<a href=#815 id=815 data-nosnippet>815</a>    ) -&gt; NTSTATUS;
+<a href=#816 id=816 data-nosnippet>816</a>    <span class="kw">fn </span>SamCreateUser2InDomain(
+<a href=#817 id=817 data-nosnippet>817</a>        DomainHandle: SAM_HANDLE,
+<a href=#818 id=818 data-nosnippet>818</a>        AccountName: PUNICODE_STRING,
+<a href=#819 id=819 data-nosnippet>819</a>        AccountType: ULONG,
+<a href=#820 id=820 data-nosnippet>820</a>        DesiredAccess: ACCESS_MASK,
+<a href=#821 id=821 data-nosnippet>821</a>        UserHandle: PSAM_HANDLE,
+<a href=#822 id=822 data-nosnippet>822</a>        GrantedAccess: PULONG,
+<a href=#823 id=823 data-nosnippet>823</a>        RelativeId: PULONG,
+<a href=#824 id=824 data-nosnippet>824</a>    ) -&gt; NTSTATUS;
+<a href=#825 id=825 data-nosnippet>825</a>    <span class="kw">fn </span>SamOpenUser(
+<a href=#826 id=826 data-nosnippet>826</a>        DomainHandle: SAM_HANDLE,
+<a href=#827 id=827 data-nosnippet>827</a>        DesiredAccess: ACCESS_MASK,
+<a href=#828 id=828 data-nosnippet>828</a>        UserId: ULONG,
+<a href=#829 id=829 data-nosnippet>829</a>        UserHandle: PSAM_HANDLE,
+<a href=#830 id=830 data-nosnippet>830</a>    ) -&gt; NTSTATUS;
+<a href=#831 id=831 data-nosnippet>831</a>    <span class="kw">fn </span>SamDeleteUser(
+<a href=#832 id=832 data-nosnippet>832</a>        UserHandle: SAM_HANDLE,
+<a href=#833 id=833 data-nosnippet>833</a>    ) -&gt; NTSTATUS;
+<a href=#834 id=834 data-nosnippet>834</a>    <span class="kw">fn </span>SamQueryInformationUser(
+<a href=#835 id=835 data-nosnippet>835</a>        UserHandle: SAM_HANDLE,
+<a href=#836 id=836 data-nosnippet>836</a>        UserInformationClass: USER_INFORMATION_CLASS,
+<a href=#837 id=837 data-nosnippet>837</a>        Buffer: <span class="kw-2">*mut </span>PVOID,
+<a href=#838 id=838 data-nosnippet>838</a>    ) -&gt; NTSTATUS;
+<a href=#839 id=839 data-nosnippet>839</a>    <span class="kw">fn </span>SamSetInformationUser(
+<a href=#840 id=840 data-nosnippet>840</a>        UserHandle: SAM_HANDLE,
+<a href=#841 id=841 data-nosnippet>841</a>        UserInformationClass: USER_INFORMATION_CLASS,
+<a href=#842 id=842 data-nosnippet>842</a>        Buffer: PVOID,
+<a href=#843 id=843 data-nosnippet>843</a>    ) -&gt; NTSTATUS;
+<a href=#844 id=844 data-nosnippet>844</a>    <span class="kw">fn </span>SamGetGroupsForUser(
+<a href=#845 id=845 data-nosnippet>845</a>        UserHandle: SAM_HANDLE,
+<a href=#846 id=846 data-nosnippet>846</a>        Groups: <span class="kw-2">*mut </span>PGROUP_MEMBERSHIP,
+<a href=#847 id=847 data-nosnippet>847</a>        MembershipCount: PULONG,
+<a href=#848 id=848 data-nosnippet>848</a>    ) -&gt; NTSTATUS;
+<a href=#849 id=849 data-nosnippet>849</a>    <span class="kw">fn </span>SamChangePasswordUser(
+<a href=#850 id=850 data-nosnippet>850</a>        UserHandle: SAM_HANDLE,
+<a href=#851 id=851 data-nosnippet>851</a>        OldPassword: PUNICODE_STRING,
+<a href=#852 id=852 data-nosnippet>852</a>        NewPassword: PUNICODE_STRING,
+<a href=#853 id=853 data-nosnippet>853</a>    ) -&gt; NTSTATUS;
+<a href=#854 id=854 data-nosnippet>854</a>    <span class="kw">fn </span>SamChangePasswordUser2(
+<a href=#855 id=855 data-nosnippet>855</a>        ServerName: PUNICODE_STRING,
+<a href=#856 id=856 data-nosnippet>856</a>        UserName: PUNICODE_STRING,
+<a href=#857 id=857 data-nosnippet>857</a>        OldPassword: PUNICODE_STRING,
+<a href=#858 id=858 data-nosnippet>858</a>        NewPassword: PUNICODE_STRING,
+<a href=#859 id=859 data-nosnippet>859</a>    ) -&gt; NTSTATUS;
+<a href=#860 id=860 data-nosnippet>860</a>    <span class="kw">fn </span>SamChangePasswordUser3(
+<a href=#861 id=861 data-nosnippet>861</a>        ServerName: PUNICODE_STRING,
+<a href=#862 id=862 data-nosnippet>862</a>        UserName: PUNICODE_STRING,
+<a href=#863 id=863 data-nosnippet>863</a>        OldPassword: PUNICODE_STRING,
+<a href=#864 id=864 data-nosnippet>864</a>        NewPassword: PUNICODE_STRING,
+<a href=#865 id=865 data-nosnippet>865</a>        EffectivePasswordPolicy: <span class="kw-2">*mut </span>PDOMAIN_PASSWORD_INFORMATION,
+<a href=#866 id=866 data-nosnippet>866</a>        PasswordChangeFailureInfo: <span class="kw-2">*mut </span>PUSER_PWD_CHANGE_FAILURE_INFORMATION,
+<a href=#867 id=867 data-nosnippet>867</a>    ) -&gt; NTSTATUS;
+<a href=#868 id=868 data-nosnippet>868</a>    <span class="kw">fn </span>SamQueryDisplayInformation(
+<a href=#869 id=869 data-nosnippet>869</a>        DomainHandle: SAM_HANDLE,
+<a href=#870 id=870 data-nosnippet>870</a>        DisplayInformation: DOMAIN_DISPLAY_INFORMATION,
+<a href=#871 id=871 data-nosnippet>871</a>        Index: ULONG,
+<a href=#872 id=872 data-nosnippet>872</a>        EntryCount: ULONG,
+<a href=#873 id=873 data-nosnippet>873</a>        PreferredMaximumLength: ULONG,
+<a href=#874 id=874 data-nosnippet>874</a>        TotalAvailable: PULONG,
+<a href=#875 id=875 data-nosnippet>875</a>        TotalReturned: PULONG,
+<a href=#876 id=876 data-nosnippet>876</a>        ReturnedEntryCount: PULONG,
+<a href=#877 id=877 data-nosnippet>877</a>        SortedBuffer: <span class="kw-2">*mut </span>PVOID,
+<a href=#878 id=878 data-nosnippet>878</a>    ) -&gt; NTSTATUS;
+<a href=#879 id=879 data-nosnippet>879</a>    <span class="kw">fn </span>SamGetDisplayEnumerationIndex(
+<a href=#880 id=880 data-nosnippet>880</a>        DomainHandle: SAM_HANDLE,
+<a href=#881 id=881 data-nosnippet>881</a>        DisplayInformation: DOMAIN_DISPLAY_INFORMATION,
+<a href=#882 id=882 data-nosnippet>882</a>        Prefix: PUNICODE_STRING,
+<a href=#883 id=883 data-nosnippet>883</a>        Index: PULONG,
+<a href=#884 id=884 data-nosnippet>884</a>    ) -&gt; NTSTATUS;
+<a href=#885 id=885 data-nosnippet>885</a>}}
+<a href=#886 id=886 data-nosnippet>886</a><span class="macro">ENUM!</span>{<span class="kw">enum </span>SECURITY_DB_DELTA_TYPE {
+<a href=#887 id=887 data-nosnippet>887</a>    SecurityDbNew = <span class="number">1</span>,
+<a href=#888 id=888 data-nosnippet>888</a>    SecurityDbRename = <span class="number">2</span>,
+<a href=#889 id=889 data-nosnippet>889</a>    SecurityDbDelete = <span class="number">3</span>,
+<a href=#890 id=890 data-nosnippet>890</a>    SecurityDbChangeMemberAdd = <span class="number">4</span>,
+<a href=#891 id=891 data-nosnippet>891</a>    SecurityDbChangeMemberSet = <span class="number">5</span>,
+<a href=#892 id=892 data-nosnippet>892</a>    SecurityDbChangeMemberDel = <span class="number">6</span>,
+<a href=#893 id=893 data-nosnippet>893</a>    SecurityDbChange = <span class="number">7</span>,
+<a href=#894 id=894 data-nosnippet>894</a>    SecurityDbChangePassword = <span class="number">8</span>,
+<a href=#895 id=895 data-nosnippet>895</a>}}
+<a href=#896 id=896 data-nosnippet>896</a><span class="kw">pub type </span>PSECURITY_DB_DELTA_TYPE = <span class="kw-2">*mut </span>SECURITY_DB_DELTA_TYPE;
+<a href=#897 id=897 data-nosnippet>897</a><span class="macro">ENUM!</span>{<span class="kw">enum </span>SECURITY_DB_OBJECT_TYPE {
+<a href=#898 id=898 data-nosnippet>898</a>    SecurityDbObjectSamDomain = <span class="number">1</span>,
+<a href=#899 id=899 data-nosnippet>899</a>    SecurityDbObjectSamUser = <span class="number">2</span>,
+<a href=#900 id=900 data-nosnippet>900</a>    SecurityDbObjectSamGroup = <span class="number">3</span>,
+<a href=#901 id=901 data-nosnippet>901</a>    SecurityDbObjectSamAlias = <span class="number">4</span>,
+<a href=#902 id=902 data-nosnippet>902</a>    SecurityDbObjectLsaPolicy = <span class="number">5</span>,
+<a href=#903 id=903 data-nosnippet>903</a>    SecurityDbObjectLsaTDomain = <span class="number">6</span>,
+<a href=#904 id=904 data-nosnippet>904</a>    SecurityDbObjectLsaAccount = <span class="number">7</span>,
+<a href=#905 id=905 data-nosnippet>905</a>    SecurityDbObjectLsaSecret = <span class="number">8</span>,
+<a href=#906 id=906 data-nosnippet>906</a>}}
+<a href=#907 id=907 data-nosnippet>907</a><span class="kw">pub type </span>PSECURITY_DB_OBJECT_TYPE = <span class="kw-2">*mut </span>SECURITY_DB_OBJECT_TYPE;
+<a href=#908 id=908 data-nosnippet>908</a><span class="macro">ENUM!</span>{<span class="kw">enum </span>SAM_ACCOUNT_TYPE {
+<a href=#909 id=909 data-nosnippet>909</a>    SamObjectUser = <span class="number">1</span>,
+<a href=#910 id=910 data-nosnippet>910</a>    SamObjectGroup = <span class="number">2</span>,
+<a href=#911 id=911 data-nosnippet>911</a>    SamObjectAlias = <span class="number">3</span>,
+<a href=#912 id=912 data-nosnippet>912</a>}}
+<a href=#913 id=913 data-nosnippet>913</a><span class="kw">pub type </span>PSAM_ACCOUNT_TYPE = <span class="kw-2">*mut </span>SAM_ACCOUNT_TYPE;
+<a href=#914 id=914 data-nosnippet>914</a><span class="kw">pub const </span>SAM_USER_ACCOUNT: u32 = <span class="number">0x00000001</span>;
+<a href=#915 id=915 data-nosnippet>915</a><span class="kw">pub const </span>SAM_GLOBAL_GROUP_ACCOUNT: u32 = <span class="number">0x00000002</span>;
+<a href=#916 id=916 data-nosnippet>916</a><span class="kw">pub const </span>SAM_LOCAL_GROUP_ACCOUNT: u32 = <span class="number">0x00000004</span>;
+<a href=#917 id=917 data-nosnippet>917</a><span class="macro">STRUCT!</span>{<span class="kw">struct </span>SAM_GROUP_MEMBER_ID {
+<a href=#918 id=918 data-nosnippet>918</a>    MemberRid: ULONG,
+<a href=#919 id=919 data-nosnippet>919</a>}}
+<a href=#920 id=920 data-nosnippet>920</a><span class="kw">pub type </span>PSAM_GROUP_MEMBER_ID = <span class="kw-2">*mut </span>SAM_GROUP_MEMBER_ID;
+<a href=#921 id=921 data-nosnippet>921</a><span class="macro">STRUCT!</span>{<span class="kw">struct </span>SAM_ALIAS_MEMBER_ID {
+<a href=#922 id=922 data-nosnippet>922</a>    MemberSid: PSID,
+<a href=#923 id=923 data-nosnippet>923</a>}}
+<a href=#924 id=924 data-nosnippet>924</a><span class="kw">pub type </span>PSAM_ALIAS_MEMBER_ID = <span class="kw-2">*mut </span>SAM_ALIAS_MEMBER_ID;
+<a href=#925 id=925 data-nosnippet>925</a><span class="macro">UNION!</span>{<span class="kw">union </span>SAM_DELTA_DATA {
+<a href=#926 id=926 data-nosnippet>926</a>    GroupMemberId: SAM_GROUP_MEMBER_ID,
+<a href=#927 id=927 data-nosnippet>927</a>    AliasMemberId: SAM_ALIAS_MEMBER_ID,
+<a href=#928 id=928 data-nosnippet>928</a>    AccountControl: ULONG,
+<a href=#929 id=929 data-nosnippet>929</a>}}
+<a href=#930 id=930 data-nosnippet>930</a><span class="kw">pub type </span>PSAM_DELTA_DATA = <span class="kw-2">*mut </span>SAM_DELTA_DATA;
+<a href=#931 id=931 data-nosnippet>931</a><span class="macro">FN!</span>{stdcall PSAM_DELTA_NOTIFICATION_ROUTINE(
+<a href=#932 id=932 data-nosnippet>932</a>    DomainSid: PSID,
+<a href=#933 id=933 data-nosnippet>933</a>    DeltaType: SECURITY_DB_DELTA_TYPE,
+<a href=#934 id=934 data-nosnippet>934</a>    ObjectType: SECURITY_DB_OBJECT_TYPE,
+<a href=#935 id=935 data-nosnippet>935</a>    ObjectRid: ULONG,
+<a href=#936 id=936 data-nosnippet>936</a>    ObjectName: PUNICODE_STRING,
+<a href=#937 id=937 data-nosnippet>937</a>    ModifiedCount: PLARGE_INTEGER,
+<a href=#938 id=938 data-nosnippet>938</a>    DeltaData: PSAM_DELTA_DATA,
+<a href=#939 id=939 data-nosnippet>939</a>) -&gt; NTSTATUS}
+<a href=#940 id=940 data-nosnippet>940</a><span class="kw">pub const </span>SAM_DELTA_NOTIFY_ROUTINE: UTF8Const = UTF8Const(<span class="string">"DeltaNotify\0"</span>);
+<a href=#941 id=941 data-nosnippet>941</a><span class="macro">EXTERN!</span>{<span class="kw">extern </span><span class="string">"system" </span>{
+<a href=#942 id=942 data-nosnippet>942</a>    <span class="kw">fn </span>SamRegisterObjectChangeNotification(
+<a href=#943 id=943 data-nosnippet>943</a>        ObjectType: SECURITY_DB_OBJECT_TYPE,
+<a href=#944 id=944 data-nosnippet>944</a>        NotificationEventHandle: HANDLE,
+<a href=#945 id=945 data-nosnippet>945</a>    ) -&gt; NTSTATUS;
+<a href=#946 id=946 data-nosnippet>946</a>    <span class="kw">fn </span>SamUnregisterObjectChangeNotification(
+<a href=#947 id=947 data-nosnippet>947</a>        ObjectType: SECURITY_DB_OBJECT_TYPE,
+<a href=#948 id=948 data-nosnippet>948</a>        NotificationEventHandle: HANDLE,
+<a href=#949 id=949 data-nosnippet>949</a>    ) -&gt; NTSTATUS;
+<a href=#950 id=950 data-nosnippet>950</a>}}
+<a href=#951 id=951 data-nosnippet>951</a><span class="kw">pub const </span>SAM_SID_COMPATIBILITY_ALL: u32 = <span class="number">0</span>;
+<a href=#952 id=952 data-nosnippet>952</a><span class="kw">pub const </span>SAM_SID_COMPATIBILITY_LAX: u32 = <span class="number">1</span>;
+<a href=#953 id=953 data-nosnippet>953</a><span class="kw">pub const </span>SAM_SID_COMPATIBILITY_STRICT: u32 = <span class="number">2</span>;
+<a href=#954 id=954 data-nosnippet>954</a><span class="macro">EXTERN!</span>{<span class="kw">extern </span><span class="string">"system" </span>{
+<a href=#955 id=955 data-nosnippet>955</a>    <span class="kw">fn </span>SamGetCompatibilityMode(
+<a href=#956 id=956 data-nosnippet>956</a>        ObjectHandle: SAM_HANDLE,
+<a href=#957 id=957 data-nosnippet>957</a>        Mode: <span class="kw-2">*mut </span>ULONG,
+<a href=#958 id=958 data-nosnippet>958</a>    ) -&gt; NTSTATUS;
+<a href=#959 id=959 data-nosnippet>959</a>}}
+<a href=#960 id=960 data-nosnippet>960</a><span class="macro">ENUM!</span>{<span class="kw">enum </span>PASSWORD_POLICY_VALIDATION_TYPE {
+<a href=#961 id=961 data-nosnippet>961</a>    SamValidateAuthentication = <span class="number">1</span>,
+<a href=#962 id=962 data-nosnippet>962</a>    SamValidatePasswordChange = <span class="number">2</span>,
+<a href=#963 id=963 data-nosnippet>963</a>    SamValidatePasswordReset = <span class="number">3</span>,
+<a href=#964 id=964 data-nosnippet>964</a>}}
+<a href=#965 id=965 data-nosnippet>965</a><span class="macro">STRUCT!</span>{<span class="kw">struct </span>SAM_VALIDATE_PASSWORD_HASH {
+<a href=#966 id=966 data-nosnippet>966</a>    Length: ULONG,
+<a href=#967 id=967 data-nosnippet>967</a>    Hash: PUCHAR,
+<a href=#968 id=968 data-nosnippet>968</a>}}
+<a href=#969 id=969 data-nosnippet>969</a><span class="kw">pub type </span>PSAM_VALIDATE_PASSWORD_HASH = <span class="kw-2">*mut </span>SAM_VALIDATE_PASSWORD_HASH;
+<a href=#970 id=970 data-nosnippet>970</a><span class="kw">pub const </span>SAM_VALIDATE_PASSWORD_LAST_SET: u32 = <span class="number">0x00000001</span>;
+<a href=#971 id=971 data-nosnippet>971</a><span class="kw">pub const </span>SAM_VALIDATE_BAD_PASSWORD_TIME: u32 = <span class="number">0x00000002</span>;
+<a href=#972 id=972 data-nosnippet>972</a><span class="kw">pub const </span>SAM_VALIDATE_LOCKOUT_TIME: u32 = <span class="number">0x00000004</span>;
+<a href=#973 id=973 data-nosnippet>973</a><span class="kw">pub const </span>SAM_VALIDATE_BAD_PASSWORD_COUNT: u32 = <span class="number">0x00000008</span>;
+<a href=#974 id=974 data-nosnippet>974</a><span class="kw">pub const </span>SAM_VALIDATE_PASSWORD_HISTORY_LENGTH: u32 = <span class="number">0x00000010</span>;
+<a href=#975 id=975 data-nosnippet>975</a><span class="kw">pub const </span>SAM_VALIDATE_PASSWORD_HISTORY: u32 = <span class="number">0x00000020</span>;
+<a href=#976 id=976 data-nosnippet>976</a><span class="macro">STRUCT!</span>{<span class="kw">struct </span>SAM_VALIDATE_PERSISTED_FIELDS {
+<a href=#977 id=977 data-nosnippet>977</a>    PresentFields: ULONG,
+<a href=#978 id=978 data-nosnippet>978</a>    PasswordLastSet: LARGE_INTEGER,
+<a href=#979 id=979 data-nosnippet>979</a>    BadPasswordTime: LARGE_INTEGER,
+<a href=#980 id=980 data-nosnippet>980</a>    LockoutTime: LARGE_INTEGER,
+<a href=#981 id=981 data-nosnippet>981</a>    BadPasswordCount: ULONG,
+<a href=#982 id=982 data-nosnippet>982</a>    PasswordHistoryLength: ULONG,
+<a href=#983 id=983 data-nosnippet>983</a>    PasswordHistory: PSAM_VALIDATE_PASSWORD_HASH,
+<a href=#984 id=984 data-nosnippet>984</a>}}
+<a href=#985 id=985 data-nosnippet>985</a><span class="kw">pub type </span>PSAM_VALIDATE_PERSISTED_FIELDS = <span class="kw-2">*mut </span>SAM_VALIDATE_PERSISTED_FIELDS;
+<a href=#986 id=986 data-nosnippet>986</a><span class="macro">ENUM!</span>{<span class="kw">enum </span>SAM_VALIDATE_VALIDATION_STATUS {
+<a href=#987 id=987 data-nosnippet>987</a>    SamValidateSuccess = <span class="number">0</span>,
+<a href=#988 id=988 data-nosnippet>988</a>    SamValidatePasswordMustChange = <span class="number">1</span>,
+<a href=#989 id=989 data-nosnippet>989</a>    SamValidateAccountLockedOut = <span class="number">2</span>,
+<a href=#990 id=990 data-nosnippet>990</a>    SamValidatePasswordExpired = <span class="number">3</span>,
+<a href=#991 id=991 data-nosnippet>991</a>    SamValidatePasswordIncorrect = <span class="number">4</span>,
+<a href=#992 id=992 data-nosnippet>992</a>    SamValidatePasswordIsInHistory = <span class="number">5</span>,
+<a href=#993 id=993 data-nosnippet>993</a>    SamValidatePasswordTooShort = <span class="number">6</span>,
+<a href=#994 id=994 data-nosnippet>994</a>    SamValidatePasswordTooLong = <span class="number">7</span>,
+<a href=#995 id=995 data-nosnippet>995</a>    SamValidatePasswordNotComplexEnough = <span class="number">8</span>,
+<a href=#996 id=996 data-nosnippet>996</a>    SamValidatePasswordTooRecent = <span class="number">9</span>,
+<a href=#997 id=997 data-nosnippet>997</a>    SamValidatePasswordFilterError = <span class="number">10</span>,
+<a href=#998 id=998 data-nosnippet>998</a>}}
+<a href=#999 id=999 data-nosnippet>999</a><span class="kw">pub type </span>PSAM_VALIDATE_VALIDATION_STATUS = <span class="kw-2">*mut </span>SAM_VALIDATE_VALIDATION_STATUS;
+<a href=#1000 id=1000 data-nosnippet>1000</a><span class="macro">STRUCT!</span>{<span class="kw">struct </span>SAM_VALIDATE_STANDARD_OUTPUT_ARG {
+<a href=#1001 id=1001 data-nosnippet>1001</a>    ChangedPersistedFields: SAM_VALIDATE_PERSISTED_FIELDS,
+<a href=#1002 id=1002 data-nosnippet>1002</a>    ValidationStatus: SAM_VALIDATE_VALIDATION_STATUS,
+<a href=#1003 id=1003 data-nosnippet>1003</a>}}
+<a href=#1004 id=1004 data-nosnippet>1004</a><span class="kw">pub type </span>PSAM_VALIDATE_STANDARD_OUTPUT_ARG = <span class="kw-2">*mut </span>SAM_VALIDATE_STANDARD_OUTPUT_ARG;
+<a href=#1005 id=1005 data-nosnippet>1005</a><span class="macro">STRUCT!</span>{<span class="kw">struct </span>SAM_VALIDATE_AUTHENTICATION_INPUT_ARG {
+<a href=#1006 id=1006 data-nosnippet>1006</a>    InputPersistedFields: SAM_VALIDATE_PERSISTED_FIELDS,
+<a href=#1007 id=1007 data-nosnippet>1007</a>    PasswordMatched: BOOLEAN,
+<a href=#1008 id=1008 data-nosnippet>1008</a>}}
+<a href=#1009 id=1009 data-nosnippet>1009</a><span class="kw">pub type </span>PSAM_VALIDATE_AUTHENTICATION_INPUT_ARG = <span class="kw-2">*mut </span>SAM_VALIDATE_AUTHENTICATION_INPUT_ARG;
+<a href=#1010 id=1010 data-nosnippet>1010</a><span class="macro">STRUCT!</span>{<span class="kw">struct </span>SAM_VALIDATE_PASSWORD_CHANGE_INPUT_ARG {
+<a href=#1011 id=1011 data-nosnippet>1011</a>    InputPersistedFields: SAM_VALIDATE_PERSISTED_FIELDS,
+<a href=#1012 id=1012 data-nosnippet>1012</a>    ClearPassword: UNICODE_STRING,
+<a href=#1013 id=1013 data-nosnippet>1013</a>    UserAccountName: UNICODE_STRING,
+<a href=#1014 id=1014 data-nosnippet>1014</a>    HashedPassword: SAM_VALIDATE_PASSWORD_HASH,
+<a href=#1015 id=1015 data-nosnippet>1015</a>    PasswordMatch: BOOLEAN,
+<a href=#1016 id=1016 data-nosnippet>1016</a>}}
+<a href=#1017 id=1017 data-nosnippet>1017</a><span class="kw">pub type </span>PSAM_VALIDATE_PASSWORD_CHANGE_INPUT_ARG = <span class="kw-2">*mut </span>SAM_VALIDATE_PASSWORD_CHANGE_INPUT_ARG;
+<a href=#1018 id=1018 data-nosnippet>1018</a><span class="macro">STRUCT!</span>{<span class="kw">struct </span>SAM_VALIDATE_PASSWORD_RESET_INPUT_ARG {
+<a href=#1019 id=1019 data-nosnippet>1019</a>    InputPersistedFields: SAM_VALIDATE_PERSISTED_FIELDS,
+<a href=#1020 id=1020 data-nosnippet>1020</a>    ClearPassword: UNICODE_STRING,
+<a href=#1021 id=1021 data-nosnippet>1021</a>    UserAccountName: UNICODE_STRING,
+<a href=#1022 id=1022 data-nosnippet>1022</a>    HashedPassword: SAM_VALIDATE_PASSWORD_HASH,
+<a href=#1023 id=1023 data-nosnippet>1023</a>    PasswordMustChangeAtNextLogon: BOOLEAN,
+<a href=#1024 id=1024 data-nosnippet>1024</a>    ClearLockout: BOOLEAN,
+<a href=#1025 id=1025 data-nosnippet>1025</a>}}
+<a href=#1026 id=1026 data-nosnippet>1026</a><span class="kw">pub type </span>PSAM_VALIDATE_PASSWORD_RESET_INPUT_ARG = <span class="kw-2">*mut </span>SAM_VALIDATE_PASSWORD_RESET_INPUT_ARG;
+<a href=#1027 id=1027 data-nosnippet>1027</a><span class="macro">UNION!</span>{<span class="kw">union </span>SAM_VALIDATE_INPUT_ARG {
+<a href=#1028 id=1028 data-nosnippet>1028</a>    ValidateAuthenticationInput: SAM_VALIDATE_AUTHENTICATION_INPUT_ARG,
+<a href=#1029 id=1029 data-nosnippet>1029</a>    ValidatePasswordChangeInput: SAM_VALIDATE_PASSWORD_CHANGE_INPUT_ARG,
+<a href=#1030 id=1030 data-nosnippet>1030</a>    ValidatePasswordResetInput: SAM_VALIDATE_PASSWORD_RESET_INPUT_ARG,
+<a href=#1031 id=1031 data-nosnippet>1031</a>}}
+<a href=#1032 id=1032 data-nosnippet>1032</a><span class="kw">pub type </span>PSAM_VALIDATE_INPUT_ARG = <span class="kw-2">*mut </span>SAM_VALIDATE_INPUT_ARG;
+<a href=#1033 id=1033 data-nosnippet>1033</a><span class="macro">UNION!</span>{<span class="kw">union </span>SAM_VALIDATE_OUTPUT_ARG {
+<a href=#1034 id=1034 data-nosnippet>1034</a>    ValidateAuthenticationOutput: SAM_VALIDATE_STANDARD_OUTPUT_ARG,
+<a href=#1035 id=1035 data-nosnippet>1035</a>    ValidatePasswordChangeOutput: SAM_VALIDATE_STANDARD_OUTPUT_ARG,
+<a href=#1036 id=1036 data-nosnippet>1036</a>    ValidatePasswordResetOutput: SAM_VALIDATE_STANDARD_OUTPUT_ARG,
+<a href=#1037 id=1037 data-nosnippet>1037</a>}}
+<a href=#1038 id=1038 data-nosnippet>1038</a><span class="kw">pub type </span>PSAM_VALIDATE_OUTPUT_ARG = <span class="kw-2">*mut </span>SAM_VALIDATE_OUTPUT_ARG;
+<a href=#1039 id=1039 data-nosnippet>1039</a><span class="macro">EXTERN!</span>{<span class="kw">extern </span><span class="string">"system" </span>{
+<a href=#1040 id=1040 data-nosnippet>1040</a>    <span class="kw">fn </span>SamValidatePassword(
+<a href=#1041 id=1041 data-nosnippet>1041</a>        ServerName: PUNICODE_STRING,
+<a href=#1042 id=1042 data-nosnippet>1042</a>        ValidationType: PASSWORD_POLICY_VALIDATION_TYPE,
+<a href=#1043 id=1043 data-nosnippet>1043</a>        InputArg: PSAM_VALIDATE_INPUT_ARG,
+<a href=#1044 id=1044 data-nosnippet>1044</a>        OutputArg: <span class="kw-2">*mut </span>PSAM_VALIDATE_OUTPUT_ARG,
+<a href=#1045 id=1045 data-nosnippet>1045</a>    ) -&gt; NTSTATUS;
+<a href=#1046 id=1046 data-nosnippet>1046</a>}}
+<a href=#1047 id=1047 data-nosnippet>1047</a><span class="macro">ENUM!</span>{<span class="kw">enum </span>SAM_GENERIC_OPERATION_TYPE {
+<a href=#1048 id=1048 data-nosnippet>1048</a>    SamObjectChangeNotificationOperation = <span class="number">0</span>,
+<a href=#1049 id=1049 data-nosnippet>1049</a>}}
+<a href=#1050 id=1050 data-nosnippet>1050</a><span class="kw">pub type </span>PSAM_GENERIC_OPERATION_TYPE = <span class="kw-2">*mut </span>SAM_GENERIC_OPERATION_TYPE;
+<a href=#1051 id=1051 data-nosnippet>1051</a><span class="macro">STRUCT!</span>{<span class="kw">struct </span>SAM_OPERATION_OBJCHG_INPUT {
+<a href=#1052 id=1052 data-nosnippet>1052</a>    Register: BOOLEAN,
+<a href=#1053 id=1053 data-nosnippet>1053</a>    EventHandle: ULONG64,
+<a href=#1054 id=1054 data-nosnippet>1054</a>    ObjectType: SECURITY_DB_OBJECT_TYPE,
+<a href=#1055 id=1055 data-nosnippet>1055</a>    ProcessID: ULONG,
+<a href=#1056 id=1056 data-nosnippet>1056</a>}}
+<a href=#1057 id=1057 data-nosnippet>1057</a><span class="kw">pub type </span>PSAM_OPERATION_OBJCHG_INPUT = <span class="kw-2">*mut </span>SAM_OPERATION_OBJCHG_INPUT;
+<a href=#1058 id=1058 data-nosnippet>1058</a><span class="macro">STRUCT!</span>{<span class="kw">struct </span>SAM_OPERATION_OBJCHG_OUTPUT {
+<a href=#1059 id=1059 data-nosnippet>1059</a>    Reserved: ULONG,
+<a href=#1060 id=1060 data-nosnippet>1060</a>}}
+<a href=#1061 id=1061 data-nosnippet>1061</a><span class="kw">pub type </span>PSAM_OPERATION_OBJCHG_OUTPUT = <span class="kw-2">*mut </span>SAM_OPERATION_OBJCHG_OUTPUT;
+<a href=#1062 id=1062 data-nosnippet>1062</a><span class="macro">UNION!</span>{<span class="kw">union </span>SAM_GENERIC_OPERATION_INPUT {
+<a href=#1063 id=1063 data-nosnippet>1063</a>    ObjChangeIn: SAM_OPERATION_OBJCHG_INPUT,
+<a href=#1064 id=1064 data-nosnippet>1064</a>}}
+<a href=#1065 id=1065 data-nosnippet>1065</a><span class="kw">pub type </span>PSAM_GENERIC_OPERATION_INPUT = <span class="kw-2">*mut </span>SAM_GENERIC_OPERATION_INPUT;
+<a href=#1066 id=1066 data-nosnippet>1066</a><span class="macro">UNION!</span>{<span class="kw">union </span>SAM_GENERIC_OPERATION_OUTPUT {
+<a href=#1067 id=1067 data-nosnippet>1067</a>    ObjChangeOut: SAM_OPERATION_OBJCHG_OUTPUT,
+<a href=#1068 id=1068 data-nosnippet>1068</a>}}
+<a href=#1069 id=1069 data-nosnippet>1069</a><span class="kw">pub type </span>PSAM_GENERIC_OPERATION_OUTPUT = <span class="kw-2">*mut </span>SAM_GENERIC_OPERATION_OUTPUT;
+<a href=#1070 id=1070 data-nosnippet>1070</a><span class="macro">EXTERN!</span>{<span class="kw">extern </span><span class="string">"system" </span>{
+<a href=#1071 id=1071 data-nosnippet>1071</a>    <span class="kw">fn </span>SamPerformGenericOperation(
+<a href=#1072 id=1072 data-nosnippet>1072</a>        ServerName: PWSTR,
+<a href=#1073 id=1073 data-nosnippet>1073</a>        OperationType: SAM_GENERIC_OPERATION_TYPE,
+<a href=#1074 id=1074 data-nosnippet>1074</a>        OperationIn: PSAM_GENERIC_OPERATION_INPUT,
+<a href=#1075 id=1075 data-nosnippet>1075</a>        OperationOut: <span class="kw-2">*mut </span>PSAM_GENERIC_OPERATION_OUTPUT,
+<a href=#1076 id=1076 data-nosnippet>1076</a>    ) -&gt; NTSTATUS;
+<a href=#1077 id=1077 data-nosnippet>1077</a>}}</code></pre></div></section></main></body></html>

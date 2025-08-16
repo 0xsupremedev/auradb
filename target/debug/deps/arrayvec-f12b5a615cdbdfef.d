@@ -1,0 +1,11 @@
+C:\Users\ashut\OneDrive\Documents\auradb\target\debug\deps\arrayvec-f12b5a615cdbdfef.d: C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\arrayvec-0.4.12\src\lib.rs C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\arrayvec-0.4.12\src\maybe_uninit_stable.rs C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\arrayvec-0.4.12\src\array.rs C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\arrayvec-0.4.12\src\array_string.rs C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\arrayvec-0.4.12\src\char.rs C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\arrayvec-0.4.12\src\range.rs C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\arrayvec-0.4.12\src\errors.rs
+
+C:\Users\ashut\OneDrive\Documents\auradb\target\debug\deps\libarrayvec-f12b5a615cdbdfef.rmeta: C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\arrayvec-0.4.12\src\lib.rs C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\arrayvec-0.4.12\src\maybe_uninit_stable.rs C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\arrayvec-0.4.12\src\array.rs C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\arrayvec-0.4.12\src\array_string.rs C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\arrayvec-0.4.12\src\char.rs C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\arrayvec-0.4.12\src\range.rs C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\arrayvec-0.4.12\src\errors.rs
+
+C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\arrayvec-0.4.12\src\lib.rs:
+C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\arrayvec-0.4.12\src\maybe_uninit_stable.rs:
+C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\arrayvec-0.4.12\src\array.rs:
+C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\arrayvec-0.4.12\src\array_string.rs:
+C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\arrayvec-0.4.12\src\char.rs:
+C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\arrayvec-0.4.12\src\range.rs:
+C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\arrayvec-0.4.12\src\errors.rs:

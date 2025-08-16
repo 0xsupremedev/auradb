@@ -1,0 +1,937 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\plotters-0.3.7\src\lib.rs`."><title>lib.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-84e720fa.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="plotters" data-themes="" data-resource-suffix="" data-rustdoc-version="1.89.0 (29483883e 2025-08-04)" data-channel="1.89.0" data-search-js="search-92309212.js" data-settings-js="settings-5514c975.js" ><script src="../../static.files/storage-4e99c027.js"></script><script defer src="../../static.files/src-script-813739b1.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-fd3af306.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-32bb7600.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">plotters/</div>lib.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="attr">#![warn(missing_docs)]
+<a href=#2 id=2 data-nosnippet>2</a>#![allow(clippy::type_complexity)]
+<a href=#3 id=3 data-nosnippet>3</a>#![cfg_attr(doc_cfg, feature(doc_cfg))]
+<a href=#4 id=4 data-nosnippet>4</a></span><span class="doccomment">/*!
+<a href=#5 id=5 data-nosnippet>5</a>
+<a href=#6 id=6 data-nosnippet>6</a># Plotters - A Rust drawing library focusing on data plotting for both WASM and native applications 🦀📈🚀
+<a href=#7 id=7 data-nosnippet>7</a>
+<a href=#8 id=8 data-nosnippet>8</a>&lt;a href="https://crates.io/crates/plotters"&gt;
+<a href=#9 id=9 data-nosnippet>9</a>    &lt;img style="display: inline!important" src="https://img.shields.io/crates/v/plotters.svg"&gt;&lt;/img&gt;
+<a href=#10 id=10 data-nosnippet>10</a>&lt;/a&gt;
+<a href=#11 id=11 data-nosnippet>11</a>&lt;a href="https://docs.rs/plotters"&gt;
+<a href=#12 id=12 data-nosnippet>12</a>    &lt;img style="display: inline!important" src="https://docs.rs/plotters/badge.svg"&gt;&lt;/img&gt;
+<a href=#13 id=13 data-nosnippet>13</a>&lt;/a&gt;
+<a href=#14 id=14 data-nosnippet>14</a>&lt;a href="https://docs.rs/plotters"&gt;
+<a href=#15 id=15 data-nosnippet>15</a>    &lt;img style="display: inline!important" src="https://img.shields.io/crates/d/plotters"&gt;&lt;/img&gt;
+<a href=#16 id=16 data-nosnippet>16</a>&lt;/a&gt;
+<a href=#17 id=17 data-nosnippet>17</a>&lt;a href="https://plotters-rs.github.io/rustdoc/plotters/"&gt;
+<a href=#18 id=18 data-nosnippet>18</a>    &lt;img style="display: inline! important" src="https://img.shields.io/badge/docs-development-lightgrey.svg"&gt;&lt;/img&gt;
+<a href=#19 id=19 data-nosnippet>19</a>&lt;/a&gt;
+<a href=#20 id=20 data-nosnippet>20</a>
+<a href=#21 id=21 data-nosnippet>21</a>Plotters is a drawing library designed for rendering figures, plots, and charts, in pure Rust. Plotters supports various types of back-ends,
+<a href=#22 id=22 data-nosnippet>22</a>including bitmap, vector graph, piston window, GTK/Cairo and WebAssembly.
+<a href=#23 id=23 data-nosnippet>23</a>
+<a href=#24 id=24 data-nosnippet>24</a>- A new Plotters Developer's Guide is a work in progress. The preview version is available [here](https://plotters-rs.github.io/book).
+<a href=#25 id=25 data-nosnippet>25</a>- Try Plotters with an interactive Jupyter notebook, or view [here](https://plotters-rs.github.io/plotters-doc-data/evcxr-jupyter-integration.html) for the static HTML version.
+<a href=#26 id=26 data-nosnippet>26</a>- To view the WASM example, go to this [link](https://plotters-rs.github.io/wasm-demo/www/index.html)
+<a href=#27 id=27 data-nosnippet>27</a>- Currently we have all the internal code ready for console plotting, but a console based backend is still not ready. See [this example](https://github.com/plotters-rs/plotters/blob/master/plotters/examples/console.rs) for how to plot on console with a customized backend.
+<a href=#28 id=28 data-nosnippet>28</a>- Plotters has moved all backend code to separate repositories, check [FAQ list](#faq-list) for details
+<a href=#29 id=29 data-nosnippet>29</a>- Some interesting [demo projects](#demo-projects) are available, feel free to try them out.
+<a href=#30 id=30 data-nosnippet>30</a>
+<a href=#31 id=31 data-nosnippet>31</a>## Gallery
+<a href=#32 id=32 data-nosnippet>32</a>
+<a href=#33 id=33 data-nosnippet>33</a>&lt;div class="galleryItem"&gt;
+<a href=#34 id=34 data-nosnippet>34</a>    &lt;a href="https://plotters-rs.github.io/plotters-doc-data/sample.png"&gt;
+<a href=#35 id=35 data-nosnippet>35</a>        &lt;img src="https://plotters-rs.github.io/plotters-doc-data/sample.png" class="galleryItem"&gt;&lt;/img&gt;
+<a href=#36 id=36 data-nosnippet>36</a>    &lt;/a&gt;
+<a href=#37 id=37 data-nosnippet>37</a>    &lt;div class="galleryText"&gt;
+<a href=#38 id=38 data-nosnippet>38</a>        Multiple Plot
+<a href=#39 id=39 data-nosnippet>39</a>        &lt;a href="https://github.com/plotters-rs/plotters/blob/master/plotters/examples/chart.rs"&gt;[code]&lt;/a&gt;
+<a href=#40 id=40 data-nosnippet>40</a>    &lt;/div&gt;
+<a href=#41 id=41 data-nosnippet>41</a>&lt;/div&gt;
+<a href=#42 id=42 data-nosnippet>42</a>
+<a href=#43 id=43 data-nosnippet>43</a>&lt;div class="galleryItem"&gt;
+<a href=#44 id=44 data-nosnippet>44</a>    &lt;a href="https://plotters-rs.github.io/plotters-doc-data/stock.png"&gt;
+<a href=#45 id=45 data-nosnippet>45</a>        &lt;img src="https://plotters-rs.github.io/plotters-doc-data/stock.png" class="galleryItem"&gt;&lt;/img&gt;
+<a href=#46 id=46 data-nosnippet>46</a>    &lt;/a&gt;
+<a href=#47 id=47 data-nosnippet>47</a>    &lt;div class="galleryText"&gt;
+<a href=#48 id=48 data-nosnippet>48</a>        Candlestick Plot
+<a href=#49 id=49 data-nosnippet>49</a>        &lt;a href="https://github.com/plotters-rs/plotters/blob/master/plotters/examples/stock.rs"&gt;[code]&lt;/a&gt;
+<a href=#50 id=50 data-nosnippet>50</a>    &lt;/div&gt;
+<a href=#51 id=51 data-nosnippet>51</a>&lt;/div&gt;
+<a href=#52 id=52 data-nosnippet>52</a>
+<a href=#53 id=53 data-nosnippet>53</a>&lt;div class="galleryItem"&gt;
+<a href=#54 id=54 data-nosnippet>54</a>    &lt;a href="https://plotters-rs.github.io/plotters-doc-data/histogram.png"&gt;
+<a href=#55 id=55 data-nosnippet>55</a>        &lt;img src="https://plotters-rs.github.io/plotters-doc-data/histogram.png" class="galleryItem"&gt;&lt;/img&gt;
+<a href=#56 id=56 data-nosnippet>56</a>    &lt;/a&gt;
+<a href=#57 id=57 data-nosnippet>57</a>    &lt;div class="galleryText"&gt;
+<a href=#58 id=58 data-nosnippet>58</a>       Histogram
+<a href=#59 id=59 data-nosnippet>59</a>        &lt;a href="https://github.com/plotters-rs/plotters/blob/master/plotters/examples/histogram.rs"&gt;[code]&lt;/a&gt;
+<a href=#60 id=60 data-nosnippet>60</a>    &lt;/div&gt;
+<a href=#61 id=61 data-nosnippet>61</a>&lt;/div&gt;
+<a href=#62 id=62 data-nosnippet>62</a>
+<a href=#63 id=63 data-nosnippet>63</a>&lt;div class="galleryItem"&gt;
+<a href=#64 id=64 data-nosnippet>64</a>    &lt;a href="https://plotters-rs.github.io/plotters-doc-data/0.png"&gt;
+<a href=#65 id=65 data-nosnippet>65</a>        &lt;img src="https://plotters-rs.github.io/plotters-doc-data/0.png" class="galleryItem"&gt;&lt;/img&gt;
+<a href=#66 id=66 data-nosnippet>66</a>    &lt;/a&gt;
+<a href=#67 id=67 data-nosnippet>67</a>    &lt;div class="galleryText"&gt;
+<a href=#68 id=68 data-nosnippet>68</a>        Simple Chart
+<a href=#69 id=69 data-nosnippet>69</a>    &lt;/div&gt;
+<a href=#70 id=70 data-nosnippet>70</a>&lt;/div&gt;
+<a href=#71 id=71 data-nosnippet>71</a>
+<a href=#72 id=72 data-nosnippet>72</a>&lt;div class="galleryItem"&gt;
+<a href=#73 id=73 data-nosnippet>73</a>    &lt;a href="https://plotters-rs.github.io/plotters-doc-data/console-2.png"&gt;
+<a href=#74 id=74 data-nosnippet>74</a>        &lt;img src="https://plotters-rs.github.io/plotters-doc-data/console-2.png" class="galleryItem"&gt;&lt;/img&gt;
+<a href=#75 id=75 data-nosnippet>75</a>    &lt;/a&gt;
+<a href=#76 id=76 data-nosnippet>76</a>    &lt;div class="galleryText"&gt;
+<a href=#77 id=77 data-nosnippet>77</a>        Plotting the Console
+<a href=#78 id=78 data-nosnippet>78</a>    &lt;/div&gt;
+<a href=#79 id=79 data-nosnippet>79</a>&lt;/div&gt;
+<a href=#80 id=80 data-nosnippet>80</a>
+<a href=#81 id=81 data-nosnippet>81</a>&lt;div class="galleryItem"&gt;
+<a href=#82 id=82 data-nosnippet>82</a>    &lt;a href="https://plotters-rs.github.io/plotters-doc-data/mandelbrot.png"&gt;
+<a href=#83 id=83 data-nosnippet>83</a>        &lt;img src="https://plotters-rs.github.io/plotters-doc-data/mandelbrot.png" class="galleryItem"&gt;&lt;/img&gt;
+<a href=#84 id=84 data-nosnippet>84</a>    &lt;/a&gt;
+<a href=#85 id=85 data-nosnippet>85</a>    &lt;div class="galleryText"&gt;
+<a href=#86 id=86 data-nosnippet>86</a>        Mandelbrot set
+<a href=#87 id=87 data-nosnippet>87</a>        &lt;a href="https://github.com/plotters-rs/plotters/blob/master/plotters/examples/mandelbrot.rs"&gt;[code]&lt;/a&gt;
+<a href=#88 id=88 data-nosnippet>88</a>    &lt;/div&gt;
+<a href=#89 id=89 data-nosnippet>89</a>&lt;/div&gt;
+<a href=#90 id=90 data-nosnippet>90</a>
+<a href=#91 id=91 data-nosnippet>91</a>
+<a href=#92 id=92 data-nosnippet>92</a>&lt;div class="galleryItem"&gt;
+<a href=#93 id=93 data-nosnippet>93</a>    &lt;a href="https://plotters-rs.github.io/plotters-doc-data/evcxr_animation.gif"&gt;
+<a href=#94 id=94 data-nosnippet>94</a>        &lt;img src="https://plotters-rs.github.io/plotters-doc-data/evcxr_animation.gif" class="galleryItem"&gt;&lt;/img&gt;
+<a href=#95 id=95 data-nosnippet>95</a>    &lt;/a&gt;
+<a href=#96 id=96 data-nosnippet>96</a>    &lt;div class="galleryText"&gt;
+<a href=#97 id=97 data-nosnippet>97</a>        Jupyter Support
+<a href=#98 id=98 data-nosnippet>98</a>    &lt;/div&gt;
+<a href=#99 id=99 data-nosnippet>99</a>&lt;/div&gt;
+<a href=#100 id=100 data-nosnippet>100</a>
+<a href=#101 id=101 data-nosnippet>101</a>&lt;div class="galleryItem"&gt;
+<a href=#102 id=102 data-nosnippet>102</a>    &lt;a href="https://plotters-rs.github.io/plotters-doc-data/plotters-piston.gif"&gt;
+<a href=#103 id=103 data-nosnippet>103</a>        &lt;img src="https://plotters-rs.github.io/plotters-doc-data/plotters-piston.gif" class="galleryItem"&gt;&lt;/img&gt;
+<a href=#104 id=104 data-nosnippet>104</a>    &lt;/a&gt;
+<a href=#105 id=105 data-nosnippet>105</a>    &lt;div class="galleryText"&gt;
+<a href=#106 id=106 data-nosnippet>106</a>        Real-time Rendering
+<a href=#107 id=107 data-nosnippet>107</a>        &lt;a href="https://github.com/plotters-rs/plotters-piston/blob/master/examples/cpustat.rs"&gt;[code]&lt;/a&gt;
+<a href=#108 id=108 data-nosnippet>108</a>    &lt;/div&gt;
+<a href=#109 id=109 data-nosnippet>109</a>&lt;/div&gt;
+<a href=#110 id=110 data-nosnippet>110</a>
+<a href=#111 id=111 data-nosnippet>111</a>&lt;div class="galleryItem"&gt;
+<a href=#112 id=112 data-nosnippet>112</a>    &lt;a href="https://plotters-rs.github.io/plotters-doc-data/normal-dist.png"&gt;
+<a href=#113 id=113 data-nosnippet>113</a>        &lt;img src="https://plotters-rs.github.io/plotters-doc-data/normal-dist.png" class="galleryItem"&gt;&lt;/img&gt;
+<a href=#114 id=114 data-nosnippet>114</a>    &lt;/a&gt;
+<a href=#115 id=115 data-nosnippet>115</a>    &lt;div class="galleryText"&gt;
+<a href=#116 id=116 data-nosnippet>116</a>        Histogram with Scatter
+<a href=#117 id=117 data-nosnippet>117</a>        &lt;a href="https://github.com/plotters-rs/plotters/blob/master/plotters/examples/normal-dist.rs"&gt;[code]&lt;/a&gt;
+<a href=#118 id=118 data-nosnippet>118</a>    &lt;/div&gt;
+<a href=#119 id=119 data-nosnippet>119</a>&lt;/div&gt;
+<a href=#120 id=120 data-nosnippet>120</a>
+<a href=#121 id=121 data-nosnippet>121</a>&lt;div class="galleryItem"&gt;
+<a href=#122 id=122 data-nosnippet>122</a>    &lt;a href="https://plotters-rs.github.io/plotters-doc-data/twoscale.png"&gt;
+<a href=#123 id=123 data-nosnippet>123</a>        &lt;img src="https://plotters-rs.github.io/plotters-doc-data/twoscale.png" class="galleryItem"&gt;&lt;/img&gt;
+<a href=#124 id=124 data-nosnippet>124</a>    &lt;/a&gt;
+<a href=#125 id=125 data-nosnippet>125</a>    &lt;div class="galleryText"&gt;
+<a href=#126 id=126 data-nosnippet>126</a>        Dual Y-Axis Example
+<a href=#127 id=127 data-nosnippet>127</a>        &lt;a href="https://github.com/plotters-rs/plotters/blob/master/plotters/examples/two-scales.rs"&gt;[code]&lt;/a&gt;
+<a href=#128 id=128 data-nosnippet>128</a>    &lt;/div&gt;
+<a href=#129 id=129 data-nosnippet>129</a>&lt;/div&gt;
+<a href=#130 id=130 data-nosnippet>130</a>
+<a href=#131 id=131 data-nosnippet>131</a>&lt;div class="galleryItem"&gt;
+<a href=#132 id=132 data-nosnippet>132</a>    &lt;a href="https://plotters-rs.github.io/plotters-doc-data/matshow.png"&gt;
+<a href=#133 id=133 data-nosnippet>133</a>        &lt;img src="https://plotters-rs.github.io/plotters-doc-data/matshow.png" class="galleryItem"&gt;&lt;/img&gt;
+<a href=#134 id=134 data-nosnippet>134</a>    &lt;/a&gt;
+<a href=#135 id=135 data-nosnippet>135</a>    &lt;div class="galleryText"&gt;
+<a href=#136 id=136 data-nosnippet>136</a>        The Matplotlib Matshow Example
+<a href=#137 id=137 data-nosnippet>137</a>        &lt;a href="https://github.com/plotters-rs/plotters/blob/master/plotters/examples/matshow.rs"&gt;[code]&lt;/a&gt;
+<a href=#138 id=138 data-nosnippet>138</a>    &lt;/div&gt;
+<a href=#139 id=139 data-nosnippet>139</a>&lt;/div&gt;
+<a href=#140 id=140 data-nosnippet>140</a>
+<a href=#141 id=141 data-nosnippet>141</a>&lt;div class="galleryItem"&gt;
+<a href=#142 id=142 data-nosnippet>142</a>    &lt;a href="https://plotters-rs.github.io/plotters-doc-data/sierpinski.png"&gt;
+<a href=#143 id=143 data-nosnippet>143</a>        &lt;img src="https://plotters-rs.github.io/plotters-doc-data/sierpinski.png" class="galleryItem"&gt;&lt;/img&gt;
+<a href=#144 id=144 data-nosnippet>144</a>    &lt;/a&gt;
+<a href=#145 id=145 data-nosnippet>145</a>    &lt;div class="galleryText"&gt;
+<a href=#146 id=146 data-nosnippet>146</a>        The Sierpinski Carpet
+<a href=#147 id=147 data-nosnippet>147</a>        &lt;a href="https://github.com/plotters-rs/plotters/blob/master/plotters/examples/sierpinski.rs"&gt;[code]&lt;/a&gt;
+<a href=#148 id=148 data-nosnippet>148</a>    &lt;/div&gt;
+<a href=#149 id=149 data-nosnippet>149</a>&lt;/div&gt;
+<a href=#150 id=150 data-nosnippet>150</a>
+<a href=#151 id=151 data-nosnippet>151</a>&lt;div class="galleryItem"&gt;
+<a href=#152 id=152 data-nosnippet>152</a>    &lt;a href="https://plotters-rs.github.io/plotters-doc-data/normal-dist2.png"&gt;
+<a href=#153 id=153 data-nosnippet>153</a>        &lt;img src="https://plotters-rs.github.io/plotters-doc-data/normal-dist2.png" class="galleryItem"&gt;&lt;/img&gt;
+<a href=#154 id=154 data-nosnippet>154</a>    &lt;/a&gt;
+<a href=#155 id=155 data-nosnippet>155</a>    &lt;div class="galleryText"&gt;
+<a href=#156 id=156 data-nosnippet>156</a>        The 1D Gaussian Distribution
+<a href=#157 id=157 data-nosnippet>157</a>        &lt;a href="https://github.com/plotters-rs/plotters/blob/master/plotters/examples/normal-dist2.rs"&gt;[code]&lt;/a&gt;
+<a href=#158 id=158 data-nosnippet>158</a>    &lt;/div&gt;
+<a href=#159 id=159 data-nosnippet>159</a>&lt;/div&gt;
+<a href=#160 id=160 data-nosnippet>160</a>
+<a href=#161 id=161 data-nosnippet>161</a>&lt;div class="galleryItem"&gt;
+<a href=#162 id=162 data-nosnippet>162</a>    &lt;a href="https://plotters-rs.github.io/plotters-doc-data/errorbar.png"&gt;
+<a href=#163 id=163 data-nosnippet>163</a>        &lt;img src="https://plotters-rs.github.io/plotters-doc-data/errorbar.png" class="galleryItem"&gt;&lt;/img&gt;
+<a href=#164 id=164 data-nosnippet>164</a>    &lt;/a&gt;
+<a href=#165 id=165 data-nosnippet>165</a>    &lt;div class="galleryText"&gt;
+<a href=#166 id=166 data-nosnippet>166</a>        The 1D Gaussian Distribution
+<a href=#167 id=167 data-nosnippet>167</a>        &lt;a href="https://github.com/plotters-rs/plotters/blob/master/plotters/examples/errorbar.rs"&gt;[code]&lt;/a&gt;
+<a href=#168 id=168 data-nosnippet>168</a>    &lt;/div&gt;
+<a href=#169 id=169 data-nosnippet>169</a>&lt;/div&gt;
+<a href=#170 id=170 data-nosnippet>170</a>
+<a href=#171 id=171 data-nosnippet>171</a>&lt;div class="galleryItem"&gt;
+<a href=#172 id=172 data-nosnippet>172</a>    &lt;a href="https://plotters-rs.github.io/plotters-doc-data/slc-temp.png"&gt;
+<a href=#173 id=173 data-nosnippet>173</a>        &lt;img src="https://plotters-rs.github.io/plotters-doc-data/slc-temp.png" class="galleryItem"&gt;&lt;/img&gt;
+<a href=#174 id=174 data-nosnippet>174</a>    &lt;/a&gt;
+<a href=#175 id=175 data-nosnippet>175</a>    &lt;div class="galleryText"&gt;
+<a href=#176 id=176 data-nosnippet>176</a>        Monthly Time Coordinate
+<a href=#177 id=177 data-nosnippet>177</a>        &lt;a href="https://github.com/plotters-rs/plotters/blob/master/plotters/examples/slc-temp.rs"&gt;[code]&lt;/a&gt;
+<a href=#178 id=178 data-nosnippet>178</a>    &lt;/div&gt;
+<a href=#179 id=179 data-nosnippet>179</a>&lt;/div&gt;
+<a href=#180 id=180 data-nosnippet>180</a>
+<a href=#181 id=181 data-nosnippet>181</a>&lt;div class="galleryItem"&gt;
+<a href=#182 id=182 data-nosnippet>182</a>    &lt;a href="https://plotters-rs.github.io/plotters-doc-data/area-chart.png"&gt;
+<a href=#183 id=183 data-nosnippet>183</a>        &lt;img src="https://plotters-rs.github.io/plotters-doc-data/area-chart.png" class="galleryItem"&gt;&lt;/img&gt;
+<a href=#184 id=184 data-nosnippet>184</a>    &lt;/a&gt;
+<a href=#185 id=185 data-nosnippet>185</a>    &lt;div class="galleryText"&gt;
+<a href=#186 id=186 data-nosnippet>186</a>        Monthly Time Coordinate
+<a href=#187 id=187 data-nosnippet>187</a>        &lt;a href="https://github.com/plotters-rs/plotters/blob/master/plotters/examples/area-chart.rs"&gt;[code]&lt;/a&gt;
+<a href=#188 id=188 data-nosnippet>188</a>    &lt;/div&gt;
+<a href=#189 id=189 data-nosnippet>189</a>&lt;/div&gt;
+<a href=#190 id=190 data-nosnippet>190</a>
+<a href=#191 id=191 data-nosnippet>191</a>&lt;div class="galleryItem"&gt;
+<a href=#192 id=192 data-nosnippet>192</a>    &lt;a href="https://plotters-rs.github.io/plotters-doc-data/snowflake.png"&gt;
+<a href=#193 id=193 data-nosnippet>193</a>        &lt;img src="https://plotters-rs.github.io/plotters-doc-data/snowflake.png" class="galleryItem"&gt;&lt;/img&gt;
+<a href=#194 id=194 data-nosnippet>194</a>    &lt;/a&gt;
+<a href=#195 id=195 data-nosnippet>195</a>    &lt;div class="galleryText"&gt;
+<a href=#196 id=196 data-nosnippet>196</a>        Koch Snowflake
+<a href=#197 id=197 data-nosnippet>197</a>        &lt;a href="https://github.com/plotters-rs/plotters/blob/master/plotters/examples/snowflake.rs"&gt;[code]&lt;/a&gt;
+<a href=#198 id=198 data-nosnippet>198</a>    &lt;/div&gt;
+<a href=#199 id=199 data-nosnippet>199</a>&lt;/div&gt;
+<a href=#200 id=200 data-nosnippet>200</a>
+<a href=#201 id=201 data-nosnippet>201</a>
+<a href=#202 id=202 data-nosnippet>202</a>&lt;div class="galleryItem"&gt;
+<a href=#203 id=203 data-nosnippet>203</a>    &lt;a href="https://plotters-rs.github.io/plotters-doc-data/animation.gif"&gt;
+<a href=#204 id=204 data-nosnippet>204</a>        &lt;img src="https://plotters-rs.github.io/plotters-doc-data/animation.gif" class="galleryItem"&gt;&lt;/img&gt;
+<a href=#205 id=205 data-nosnippet>205</a>    &lt;/a&gt;
+<a href=#206 id=206 data-nosnippet>206</a>    &lt;div class="galleryText"&gt;
+<a href=#207 id=207 data-nosnippet>207</a>        Koch Snowflake Animation
+<a href=#208 id=208 data-nosnippet>208</a>        &lt;a href="https://github.com/plotters-rs/plotters/blob/master/plotters/examples/animation.rs"&gt;[code]&lt;/a&gt;
+<a href=#209 id=209 data-nosnippet>209</a>    &lt;/div&gt;
+<a href=#210 id=210 data-nosnippet>210</a>&lt;/div&gt;
+<a href=#211 id=211 data-nosnippet>211</a>
+<a href=#212 id=212 data-nosnippet>212</a>
+<a href=#213 id=213 data-nosnippet>213</a>&lt;div class="galleryItem"&gt;
+<a href=#214 id=214 data-nosnippet>214</a>    &lt;a href="https://plotters-rs.github.io/plotters-doc-data/console.png"&gt;
+<a href=#215 id=215 data-nosnippet>215</a>        &lt;img src="https://plotters-rs.github.io/plotters-doc-data/console.png" class="galleryItem"&gt;&lt;/img&gt;
+<a href=#216 id=216 data-nosnippet>216</a>    &lt;/a&gt;
+<a href=#217 id=217 data-nosnippet>217</a>    &lt;div class="galleryText"&gt;
+<a href=#218 id=218 data-nosnippet>218</a>        Drawing on a Console
+<a href=#219 id=219 data-nosnippet>219</a>        &lt;a href="https://github.com/plotters-rs/plotters/blob/master/plotters/examples/console.rs"&gt;[code]&lt;/a&gt;
+<a href=#220 id=220 data-nosnippet>220</a>    &lt;/div&gt;
+<a href=#221 id=221 data-nosnippet>221</a>&lt;/div&gt;
+<a href=#222 id=222 data-nosnippet>222</a>
+<a href=#223 id=223 data-nosnippet>223</a>&lt;div class="galleryItem"&gt;
+<a href=#224 id=224 data-nosnippet>224</a>    &lt;a href="https://plotters-rs.github.io/plotters-doc-data/blit-bitmap.png"&gt;
+<a href=#225 id=225 data-nosnippet>225</a>        &lt;img src="https://plotters-rs.github.io/plotters-doc-data/blit-bitmap.png" class="galleryItem"&gt;&lt;/img&gt;
+<a href=#226 id=226 data-nosnippet>226</a>    &lt;/a&gt;
+<a href=#227 id=227 data-nosnippet>227</a>    &lt;div class="galleryText"&gt;
+<a href=#228 id=228 data-nosnippet>228</a>        Drawing bitmap on chart
+<a href=#229 id=229 data-nosnippet>229</a>        &lt;a href="https://github.com/plotters-rs/plotters/blob/master/plotters/examples/blit-bitmap.rs"&gt;[code]&lt;/a&gt;
+<a href=#230 id=230 data-nosnippet>230</a>    &lt;/div&gt;
+<a href=#231 id=231 data-nosnippet>231</a>&lt;/div&gt;
+<a href=#232 id=232 data-nosnippet>232</a>
+<a href=#233 id=233 data-nosnippet>233</a>&lt;div class="galleryItem"&gt;
+<a href=#234 id=234 data-nosnippet>234</a>    &lt;a href="https://plotters-rs.github.io/plotters-doc-data/boxplot.svg"&gt;
+<a href=#235 id=235 data-nosnippet>235</a>        &lt;img src="https://plotters-rs.github.io/plotters-doc-data/boxplot.svg" class="galleryItem"&gt;&lt;/img&gt;
+<a href=#236 id=236 data-nosnippet>236</a>    &lt;/a&gt;
+<a href=#237 id=237 data-nosnippet>237</a>    &lt;div class="galleryText"&gt;
+<a href=#238 id=238 data-nosnippet>238</a>        The boxplot demo
+<a href=#239 id=239 data-nosnippet>239</a>        &lt;a href="https://github.com/plotters-rs/plotters/blob/master/plotters/examples/boxplot.rs"&gt;[code]&lt;/a&gt;
+<a href=#240 id=240 data-nosnippet>240</a>    &lt;/div&gt;
+<a href=#241 id=241 data-nosnippet>241</a>&lt;/div&gt;
+<a href=#242 id=242 data-nosnippet>242</a>
+<a href=#243 id=243 data-nosnippet>243</a>&lt;div class="galleryItem"&gt;
+<a href=#244 id=244 data-nosnippet>244</a>    &lt;a href="https://plotters-rs.github.io/plotters-doc-data/3d-plot.svg"&gt;
+<a href=#245 id=245 data-nosnippet>245</a>        &lt;img src="https://plotters-rs.github.io/plotters-doc-data/3d-plot.svg" class="galleryItem"&gt;&lt;/img&gt;
+<a href=#246 id=246 data-nosnippet>246</a>    &lt;/a&gt;
+<a href=#247 id=247 data-nosnippet>247</a>    &lt;div class="galleryText"&gt;
+<a href=#248 id=248 data-nosnippet>248</a>        3D plot rendering
+<a href=#249 id=249 data-nosnippet>249</a>        &lt;a href="https://github.com/plotters-rs/plotters/blob/master/plotters/examples/3d-plot.rs"&gt;[code]&lt;/a&gt;
+<a href=#250 id=250 data-nosnippet>250</a>    &lt;/div&gt;
+<a href=#251 id=251 data-nosnippet>251</a>&lt;/div&gt;
+<a href=#252 id=252 data-nosnippet>252</a>
+<a href=#253 id=253 data-nosnippet>253</a>&lt;div class="galleryItem"&gt;
+<a href=#254 id=254 data-nosnippet>254</a>    &lt;a href="https://plotters-rs.github.io/plotters-doc-data/3d-plot2.gif"&gt;
+<a href=#255 id=255 data-nosnippet>255</a>        &lt;img src="https://plotters-rs.github.io/plotters-doc-data/3d-plot2.gif" class="galleryItem"&gt;&lt;/img&gt;
+<a href=#256 id=256 data-nosnippet>256</a>    &lt;/a&gt;
+<a href=#257 id=257 data-nosnippet>257</a>    &lt;div class="galleryText"&gt;
+<a href=#258 id=258 data-nosnippet>258</a>        2-Var Gussian Distribution PDF
+<a href=#259 id=259 data-nosnippet>259</a>        &lt;a href="https://github.com/plotters-rs/plotters/blob/master/plotters/examples/3d-plot2.rs"&gt;[code]&lt;/a&gt;
+<a href=#260 id=260 data-nosnippet>260</a>    &lt;/div&gt;
+<a href=#261 id=261 data-nosnippet>261</a>&lt;/div&gt;
+<a href=#262 id=262 data-nosnippet>262</a>
+<a href=#263 id=263 data-nosnippet>263</a>&lt;div class="galleryItem"&gt;
+<a href=#264 id=264 data-nosnippet>264</a>    &lt;a href="https://plotters-rs.github.io/plotters-doc-data/tick_control.svg"&gt;
+<a href=#265 id=265 data-nosnippet>265</a>        &lt;img src="https://plotters-rs.github.io/plotters-doc-data/tick_control.svg" class="galleryItem"&gt;&lt;/img&gt;
+<a href=#266 id=266 data-nosnippet>266</a>    &lt;/a&gt;
+<a href=#267 id=267 data-nosnippet>267</a>    &lt;div class="galleryText"&gt;
+<a href=#268 id=268 data-nosnippet>268</a>        COVID-19 Visualization
+<a href=#269 id=269 data-nosnippet>269</a>        &lt;a href="https://github.com/plotters-rs/plotters/blob/master/plotters/examples/tick_control.rs"&gt;[code]&lt;/a&gt;
+<a href=#270 id=270 data-nosnippet>270</a>    &lt;/div&gt;
+<a href=#271 id=271 data-nosnippet>271</a>&lt;/div&gt;
+<a href=#272 id=272 data-nosnippet>272</a>
+<a href=#273 id=273 data-nosnippet>273</a>
+<a href=#274 id=274 data-nosnippet>274</a>## Table of Contents
+<a href=#275 id=275 data-nosnippet>275</a>  * [Gallery](#gallery)
+<a href=#276 id=276 data-nosnippet>276</a>  * [Dependencies](#dependencies)
+<a href=#277 id=277 data-nosnippet>277</a>    + [Ubuntu Linux](#ubuntu-linux)
+<a href=#278 id=278 data-nosnippet>278</a>  * [Quick Start](#quick-start)
+<a href=#279 id=279 data-nosnippet>279</a>  * [Demo Projects](#demo-projects)
+<a href=#280 id=280 data-nosnippet>280</a>  * [Trying with Jupyter evcxr Kernel Interactively](#trying-with-jupyter-evcxr-kernel-interactively)
+<a href=#281 id=281 data-nosnippet>281</a>  * [Interactive Tutorial with Jupyter Notebook](#interactive-tutorial-with-jupyter-notebook)
+<a href=#282 id=282 data-nosnippet>282</a>  * [Plotting in Rust](#plotting-in-rust)
+<a href=#283 id=283 data-nosnippet>283</a>  * [Plotting on HTML5 canvas with WASM Backend](#plotting-on-html5-canvas-with-wasm-backend)
+<a href=#284 id=284 data-nosnippet>284</a>  * [What types of figure are supported?](#what-types-of-figure-are-supported)
+<a href=#285 id=285 data-nosnippet>285</a>  * [Concepts by example](#concepts-by-example)
+<a href=#286 id=286 data-nosnippet>286</a>    + [Drawing Backends](#drawing-backends)
+<a href=#287 id=287 data-nosnippet>287</a>    + [Drawing Area](#drawing-area)
+<a href=#288 id=288 data-nosnippet>288</a>    + [Elements](#elements)
+<a href=#289 id=289 data-nosnippet>289</a>    + [Composable Elements](#composable-elements)
+<a href=#290 id=290 data-nosnippet>290</a>    + [Chart Context](#chart-context)
+<a href=#291 id=291 data-nosnippet>291</a>  * [Misc](#misc)
+<a href=#292 id=292 data-nosnippet>292</a>    + [Development Version](#development-version)
+<a href=#293 id=293 data-nosnippet>293</a>    + [Reducing Depending Libraries &amp;&amp; Turning Off Backends](#reducing-depending-libraries--turning-off-backends)
+<a href=#294 id=294 data-nosnippet>294</a>    + [List of Features](#list-of-features)
+<a href=#295 id=295 data-nosnippet>295</a>  * [FAQ List](#faq-list)
+<a href=#296 id=296 data-nosnippet>296</a>
+<a href=#297 id=297 data-nosnippet>297</a>## Dependencies
+<a href=#298 id=298 data-nosnippet>298</a>
+<a href=#299 id=299 data-nosnippet>299</a>### Ubuntu Linux
+<a href=#300 id=300 data-nosnippet>300</a>
+<a href=#301 id=301 data-nosnippet>301</a> ```sudo apt install pkg-config libfreetype6-dev libfontconfig1-dev```
+<a href=#302 id=302 data-nosnippet>302</a>
+<a href=#303 id=303 data-nosnippet>303</a>## Quick Start
+<a href=#304 id=304 data-nosnippet>304</a>
+<a href=#305 id=305 data-nosnippet>305</a>To use Plotters, you can simply add Plotters into your `Cargo.toml`
+<a href=#306 id=306 data-nosnippet>306</a>```toml
+<a href=#307 id=307 data-nosnippet>307</a>[dependencies]
+<a href=#308 id=308 data-nosnippet>308</a>plotters = "0.3.3"
+<a href=#309 id=309 data-nosnippet>309</a>```
+<a href=#310 id=310 data-nosnippet>310</a>
+<a href=#311 id=311 data-nosnippet>311</a>And the following code draws a quadratic function. `src/main.rs`,
+<a href=#312 id=312 data-nosnippet>312</a>
+<a href=#313 id=313 data-nosnippet>313</a>```rust
+<a href=#314 id=314 data-nosnippet>314</a>use plotters::prelude::*;
+<a href=#315 id=315 data-nosnippet>315</a>fn main() -&gt; Result&lt;(), Box&lt;dyn std::error::Error&gt;&gt; {
+<a href=#316 id=316 data-nosnippet>316</a>    let root = BitMapBackend::new("plotters-doc-data/0.png", (640, 480)).into_drawing_area();
+<a href=#317 id=317 data-nosnippet>317</a>    root.fill(&amp;WHITE)?;
+<a href=#318 id=318 data-nosnippet>318</a>    let mut chart = ChartBuilder::on(&amp;root)
+<a href=#319 id=319 data-nosnippet>319</a>        .caption("y=x^2", ("sans-serif", 50).into_font())
+<a href=#320 id=320 data-nosnippet>320</a>        .margin(5)
+<a href=#321 id=321 data-nosnippet>321</a>        .x_label_area_size(30)
+<a href=#322 id=322 data-nosnippet>322</a>        .y_label_area_size(30)
+<a href=#323 id=323 data-nosnippet>323</a>        .build_cartesian_2d(-1f32..1f32, -0.1f32..1f32)?;
+<a href=#324 id=324 data-nosnippet>324</a>
+<a href=#325 id=325 data-nosnippet>325</a>    chart.configure_mesh().draw()?;
+<a href=#326 id=326 data-nosnippet>326</a>
+<a href=#327 id=327 data-nosnippet>327</a>    chart
+<a href=#328 id=328 data-nosnippet>328</a>        .draw_series(LineSeries::new(
+<a href=#329 id=329 data-nosnippet>329</a>            (-50..=50).map(|x| x as f32 / 50.0).map(|x| (x, x * x)),
+<a href=#330 id=330 data-nosnippet>330</a>            &amp;RED,
+<a href=#331 id=331 data-nosnippet>331</a>        ))?
+<a href=#332 id=332 data-nosnippet>332</a>        .label("y = x^2")
+<a href=#333 id=333 data-nosnippet>333</a>        .legend(|(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], &amp;RED));
+<a href=#334 id=334 data-nosnippet>334</a>
+<a href=#335 id=335 data-nosnippet>335</a>    chart
+<a href=#336 id=336 data-nosnippet>336</a>        .configure_series_labels()
+<a href=#337 id=337 data-nosnippet>337</a>        .background_style(&amp;WHITE.mix(0.8))
+<a href=#338 id=338 data-nosnippet>338</a>        .border_style(&amp;BLACK)
+<a href=#339 id=339 data-nosnippet>339</a>        .draw()?;
+<a href=#340 id=340 data-nosnippet>340</a>
+<a href=#341 id=341 data-nosnippet>341</a>    root.present()?;
+<a href=#342 id=342 data-nosnippet>342</a>
+<a href=#343 id=343 data-nosnippet>343</a>    Ok(())
+<a href=#344 id=344 data-nosnippet>344</a>}
+<a href=#345 id=345 data-nosnippet>345</a>```
+<a href=#346 id=346 data-nosnippet>346</a>
+<a href=#347 id=347 data-nosnippet>347</a>![](https://plotters-rs.github.io/plotters-doc-data/0.png)
+<a href=#348 id=348 data-nosnippet>348</a>
+<a href=#349 id=349 data-nosnippet>349</a>## Demo Projects
+<a href=#350 id=350 data-nosnippet>350</a>
+<a href=#351 id=351 data-nosnippet>351</a>To learn how to use Plotters in different scenarios, check out the following demo projects:
+<a href=#352 id=352 data-nosnippet>352</a>
+<a href=#353 id=353 data-nosnippet>353</a>- WebAssembly + Plotters: [plotters-wasm-demo](https://github.com/plotters-rs/plotters-wasm-demo)
+<a href=#354 id=354 data-nosnippet>354</a>- minifb + Plotters: [plotters-minifb-demo](https://github.com/plotters-rs/plotters-minifb-demo)
+<a href=#355 id=355 data-nosnippet>355</a>- GTK + Plotters: [plotters-gtk-demo](https://github.com/plotters-rs/plotters-gtk-demo)
+<a href=#356 id=356 data-nosnippet>356</a>
+<a href=#357 id=357 data-nosnippet>357</a>
+<a href=#358 id=358 data-nosnippet>358</a>## Trying with Jupyter evcxr Kernel Interactively
+<a href=#359 id=359 data-nosnippet>359</a>
+<a href=#360 id=360 data-nosnippet>360</a>Plotters now supports integration with `evcxr` and is able to interactively draw plots in Jupyter Notebook.
+<a href=#361 id=361 data-nosnippet>361</a>The feature `evcxr` should be enabled when including Plotters to Jupyter Notebook.
+<a href=#362 id=362 data-nosnippet>362</a>
+<a href=#363 id=363 data-nosnippet>363</a>The following code shows a minimal example of this.
+<a href=#364 id=364 data-nosnippet>364</a>
+<a href=#365 id=365 data-nosnippet>365</a>```text
+<a href=#366 id=366 data-nosnippet>366</a>:dep plotters = { version = "^0.3.6", default-features = false, features = ["evcxr", "all_series", "all_elements"] }
+<a href=#367 id=367 data-nosnippet>367</a>extern crate plotters;
+<a href=#368 id=368 data-nosnippet>368</a>use plotters::prelude::*;
+<a href=#369 id=369 data-nosnippet>369</a>
+<a href=#370 id=370 data-nosnippet>370</a>let figure = evcxr_figure((640, 480), |root| {
+<a href=#371 id=371 data-nosnippet>371</a>    root.fill(&amp;WHITE)?;
+<a href=#372 id=372 data-nosnippet>372</a>    let mut chart = ChartBuilder::on(&amp;root)
+<a href=#373 id=373 data-nosnippet>373</a>        .caption("y=x^2", ("Arial", 50).into_font())
+<a href=#374 id=374 data-nosnippet>374</a>        .margin(5)
+<a href=#375 id=375 data-nosnippet>375</a>        .x_label_area_size(30)
+<a href=#376 id=376 data-nosnippet>376</a>        .y_label_area_size(30)
+<a href=#377 id=377 data-nosnippet>377</a>        .build_cartesian_2d(-1f32..1f32, -0.1f32..1f32)?;
+<a href=#378 id=378 data-nosnippet>378</a>
+<a href=#379 id=379 data-nosnippet>379</a>    chart.configure_mesh().draw()?;
+<a href=#380 id=380 data-nosnippet>380</a>
+<a href=#381 id=381 data-nosnippet>381</a>    chart.draw_series(LineSeries::new(
+<a href=#382 id=382 data-nosnippet>382</a>        (-50..=50).map(|x| x as f32 / 50.0).map(|x| (x, x * x)),
+<a href=#383 id=383 data-nosnippet>383</a>        &amp;RED,
+<a href=#384 id=384 data-nosnippet>384</a>    )).unwrap()
+<a href=#385 id=385 data-nosnippet>385</a>        .label("y = x^2")
+<a href=#386 id=386 data-nosnippet>386</a>        .legend(|(x,y)| PathElement::new(vec![(x,y), (x + 20,y)], &amp;RED));
+<a href=#387 id=387 data-nosnippet>387</a>
+<a href=#388 id=388 data-nosnippet>388</a>    chart.configure_series_labels()
+<a href=#389 id=389 data-nosnippet>389</a>        .background_style(&amp;WHITE.mix(0.8))
+<a href=#390 id=390 data-nosnippet>390</a>        .border_style(&amp;BLACK)
+<a href=#391 id=391 data-nosnippet>391</a>        .draw()?;
+<a href=#392 id=392 data-nosnippet>392</a>    Ok(())
+<a href=#393 id=393 data-nosnippet>393</a>});
+<a href=#394 id=394 data-nosnippet>394</a>figure
+<a href=#395 id=395 data-nosnippet>395</a>```
+<a href=#396 id=396 data-nosnippet>396</a>
+<a href=#397 id=397 data-nosnippet>397</a>&lt;img src="https://plotters-rs.github.io/plotters-doc-data/evcxr_animation.gif" width="450px"&gt;&lt;/img&gt;
+<a href=#398 id=398 data-nosnippet>398</a>
+<a href=#399 id=399 data-nosnippet>399</a>## Interactive Tutorial with Jupyter Notebook
+<a href=#400 id=400 data-nosnippet>400</a>
+<a href=#401 id=401 data-nosnippet>401</a>*This tutorial is a work in progress and isn't complete*
+<a href=#402 id=402 data-nosnippet>402</a>
+<a href=#403 id=403 data-nosnippet>403</a>Thanks to the evcxr, now we have an interactive tutorial for Plotters!
+<a href=#404 id=404 data-nosnippet>404</a>To use the interactive notebook, you must have Jupyter and evcxr installed on your computer.
+<a href=#405 id=405 data-nosnippet>405</a>Follow the instruction on [this page](https://github.com/google/evcxr/tree/master/evcxr_jupyter) below to install it.
+<a href=#406 id=406 data-nosnippet>406</a>
+<a href=#407 id=407 data-nosnippet>407</a>After that, you should be able to start your Jupyter server locally and load the tutorial!
+<a href=#408 id=408 data-nosnippet>408</a>
+<a href=#409 id=409 data-nosnippet>409</a>```bash
+<a href=#410 id=410 data-nosnippet>410</a>git clone https://github.com/38/plotters-doc-data
+<a href=#411 id=411 data-nosnippet>411</a>cd plotters-doc-data
+<a href=#412 id=412 data-nosnippet>412</a>jupyter notebook
+<a href=#413 id=413 data-nosnippet>413</a>```
+<a href=#414 id=414 data-nosnippet>414</a>
+<a href=#415 id=415 data-nosnippet>415</a>And select the notebook called `evcxr-jupyter-integration.ipynb`.
+<a href=#416 id=416 data-nosnippet>416</a>
+<a href=#417 id=417 data-nosnippet>417</a>Also, there's a static HTML version of this notebook available at [this location](https://plotters-rs.github.io/plotters-doc-data/evcxr-jupyter-integration.html)
+<a href=#418 id=418 data-nosnippet>418</a>
+<a href=#419 id=419 data-nosnippet>419</a>## Plotting in Rust
+<a href=#420 id=420 data-nosnippet>420</a>
+<a href=#421 id=421 data-nosnippet>421</a>Rust is a perfect language for data visualization. Although there are many mature visualization libraries in many different languages, Rust is one of the best languages that fits the need.
+<a href=#422 id=422 data-nosnippet>422</a>
+<a href=#423 id=423 data-nosnippet>423</a>* **Easy to use** Rust has a very good iterator system built into the standard library. With the help of iterators,
+<a href=#424 id=424 data-nosnippet>424</a>  plotting in Rust can be as easy as most of the high-level programming languages. The Rust based plotting library
+<a href=#425 id=425 data-nosnippet>425</a>  can be very easy to use.
+<a href=#426 id=426 data-nosnippet>426</a>
+<a href=#427 id=427 data-nosnippet>427</a>* **Fast** If you need to render a figure with trillions of data points,
+<a href=#428 id=428 data-nosnippet>428</a>  Rust is a good choice. Rust's performance allows you to combine the data processing step
+<a href=#429 id=429 data-nosnippet>429</a>  and rendering step into a single application. When plotting in high-level programming languages,
+<a href=#430 id=430 data-nosnippet>430</a>  e.g. Javascript or Python, data points must be down-sampled before feeding into the plotting
+<a href=#431 id=431 data-nosnippet>431</a>  program because of the performance considerations. Rust is fast enough to do the data processing and visualization
+<a href=#432 id=432 data-nosnippet>432</a>  within a single program. You can also integrate the
+<a href=#433 id=433 data-nosnippet>433</a>  figure rendering code into your application to handle a huge amount of data and visualize it in real-time.
+<a href=#434 id=434 data-nosnippet>434</a>
+<a href=#435 id=435 data-nosnippet>435</a>* **WebAssembly Support** Rust is one of the languages with the best WASM support. Plotting in Rust could be
+<a href=#436 id=436 data-nosnippet>436</a>  very useful for visualization on a web page and would have a huge performance improvement comparing to Javascript.
+<a href=#437 id=437 data-nosnippet>437</a>
+<a href=#438 id=438 data-nosnippet>438</a>## Plotting on HTML5 canvas with WASM Backend
+<a href=#439 id=439 data-nosnippet>439</a>
+<a href=#440 id=440 data-nosnippet>440</a>Plotters currently supports a backend that uses the HTML5 canvas. To use WASM, you can simply use
+<a href=#441 id=441 data-nosnippet>441</a>`CanvasBackend` instead of other backend and all other API remains the same!
+<a href=#442 id=442 data-nosnippet>442</a>
+<a href=#443 id=443 data-nosnippet>443</a>There's a small demo for Plotters + WASM available at [here](https://github.com/plotters-rs/plotters-wasm-demo).
+<a href=#444 id=444 data-nosnippet>444</a>To play with the deployed version, follow this [link](https://plotters-rs.github.io/wasm-demo/www/index.html).
+<a href=#445 id=445 data-nosnippet>445</a>
+<a href=#446 id=446 data-nosnippet>446</a>## What types of figure are supported?
+<a href=#447 id=447 data-nosnippet>447</a>
+<a href=#448 id=448 data-nosnippet>448</a>Plotters is not limited to any specific type of figure.
+<a href=#449 id=449 data-nosnippet>449</a>You can create your own types of figures easily with the Plotters API.
+<a href=#450 id=450 data-nosnippet>450</a>
+<a href=#451 id=451 data-nosnippet>451</a>Plotters does provide some built-in figure types for convenience.
+<a href=#452 id=452 data-nosnippet>452</a>Currently, we support line series, point series, candlestick series, and histogram.
+<a href=#453 id=453 data-nosnippet>453</a>And the library is designed to be able to render multiple figure into a single image.
+<a href=#454 id=454 data-nosnippet>454</a>But Plotter is aimed to be a platform that is fully extendable to support any other types of figure.
+<a href=#455 id=455 data-nosnippet>455</a>
+<a href=#456 id=456 data-nosnippet>456</a>## Concepts by example
+<a href=#457 id=457 data-nosnippet>457</a>
+<a href=#458 id=458 data-nosnippet>458</a>### Drawing Backends
+<a href=#459 id=459 data-nosnippet>459</a>Plotters can use different drawing backends, including SVG, BitMap, and even real-time rendering. For example, a bitmap drawing backend.
+<a href=#460 id=460 data-nosnippet>460</a>
+<a href=#461 id=461 data-nosnippet>461</a>```rust
+<a href=#462 id=462 data-nosnippet>462</a>use plotters::prelude::*;
+<a href=#463 id=463 data-nosnippet>463</a>fn main() -&gt; Result&lt;(), Box&lt;dyn std::error::Error&gt;&gt; {
+<a href=#464 id=464 data-nosnippet>464</a>    // Create a 800*600 bitmap and start drawing
+<a href=#465 id=465 data-nosnippet>465</a>    let mut backend = BitMapBackend::new("plotters-doc-data/1.png", (300, 200));
+<a href=#466 id=466 data-nosnippet>466</a>    // And if we want SVG backend
+<a href=#467 id=467 data-nosnippet>467</a>    // let backend = SVGBackend::new("output.svg", (800, 600));
+<a href=#468 id=468 data-nosnippet>468</a>    backend.draw_rect((50, 50), (200, 150), &amp;RED, true)?;
+<a href=#469 id=469 data-nosnippet>469</a>    backend.present()?;
+<a href=#470 id=470 data-nosnippet>470</a>    Ok(())
+<a href=#471 id=471 data-nosnippet>471</a>}
+<a href=#472 id=472 data-nosnippet>472</a>```
+<a href=#473 id=473 data-nosnippet>473</a>
+<a href=#474 id=474 data-nosnippet>474</a>![](https://plotters-rs.github.io/plotters-doc-data/1.png)
+<a href=#475 id=475 data-nosnippet>475</a>
+<a href=#476 id=476 data-nosnippet>476</a>### Drawing Area
+<a href=#477 id=477 data-nosnippet>477</a>Plotters uses a concept called drawing area for layout purpose.
+<a href=#478 id=478 data-nosnippet>478</a>Plotters supports integrating multiple figures into a single image.
+<a href=#479 id=479 data-nosnippet>479</a>This is done by creating sub-drawing-areas.
+<a href=#480 id=480 data-nosnippet>480</a>
+<a href=#481 id=481 data-nosnippet>481</a>Besides that, the drawing area also allows for a customized coordinate system, by doing so, the coordinate mapping is done by the drawing area automatically.
+<a href=#482 id=482 data-nosnippet>482</a>
+<a href=#483 id=483 data-nosnippet>483</a>```rust
+<a href=#484 id=484 data-nosnippet>484</a>use plotters::prelude::*;
+<a href=#485 id=485 data-nosnippet>485</a>fn main() -&gt; Result&lt;(), Box&lt;dyn std::error::Error&gt;&gt; {
+<a href=#486 id=486 data-nosnippet>486</a>    let root_drawing_area =
+<a href=#487 id=487 data-nosnippet>487</a>        BitMapBackend::new("plotters-doc-data/2.png", (300, 200)).into_drawing_area();
+<a href=#488 id=488 data-nosnippet>488</a>    // And we can split the drawing area into 3x3 grid
+<a href=#489 id=489 data-nosnippet>489</a>    let child_drawing_areas = root_drawing_area.split_evenly((3, 3));
+<a href=#490 id=490 data-nosnippet>490</a>    // Then we fill the drawing area with different color
+<a href=#491 id=491 data-nosnippet>491</a>    for (area, color) in child_drawing_areas.into_iter().zip(0..) {
+<a href=#492 id=492 data-nosnippet>492</a>        area.fill(&amp;Palette99::pick(color))?;
+<a href=#493 id=493 data-nosnippet>493</a>    }
+<a href=#494 id=494 data-nosnippet>494</a>    root_drawing_area.present()?;
+<a href=#495 id=495 data-nosnippet>495</a>    Ok(())
+<a href=#496 id=496 data-nosnippet>496</a>}
+<a href=#497 id=497 data-nosnippet>497</a>```
+<a href=#498 id=498 data-nosnippet>498</a>
+<a href=#499 id=499 data-nosnippet>499</a>![](https://plotters-rs.github.io/plotters-doc-data/2.png)
+<a href=#500 id=500 data-nosnippet>500</a>
+<a href=#501 id=501 data-nosnippet>501</a>### Elements
+<a href=#502 id=502 data-nosnippet>502</a>
+<a href=#503 id=503 data-nosnippet>503</a>In Plotters, elements are the building blocks of figures. All elements are able to be drawn on a drawing area.
+<a href=#504 id=504 data-nosnippet>504</a>There are different types of built-in elements, like lines, texts, circles, etc.
+<a href=#505 id=505 data-nosnippet>505</a>You can also define your own element in the application code.
+<a href=#506 id=506 data-nosnippet>506</a>
+<a href=#507 id=507 data-nosnippet>507</a>You may also combine existing elements to build a complex element.
+<a href=#508 id=508 data-nosnippet>508</a>
+<a href=#509 id=509 data-nosnippet>509</a>To learn more about the element system, please read the [element module documentation](./element/index.html).
+<a href=#510 id=510 data-nosnippet>510</a>
+<a href=#511 id=511 data-nosnippet>511</a>```rust
+<a href=#512 id=512 data-nosnippet>512</a>use plotters::prelude::*;
+<a href=#513 id=513 data-nosnippet>513</a>fn main() -&gt; Result&lt;(), Box&lt;dyn std::error::Error&gt;&gt; {
+<a href=#514 id=514 data-nosnippet>514</a>    let root = BitMapBackend::new("plotters-doc-data/3.png", (300, 200)).into_drawing_area();
+<a href=#515 id=515 data-nosnippet>515</a>    root.fill(&amp;WHITE)?;
+<a href=#516 id=516 data-nosnippet>516</a>    // Draw an circle on the drawing area
+<a href=#517 id=517 data-nosnippet>517</a>    root.draw(&amp;Circle::new(
+<a href=#518 id=518 data-nosnippet>518</a>        (100, 100),
+<a href=#519 id=519 data-nosnippet>519</a>        50,
+<a href=#520 id=520 data-nosnippet>520</a>        Into::&lt;ShapeStyle&gt;::into(&amp;GREEN).filled(),
+<a href=#521 id=521 data-nosnippet>521</a>    ))?;
+<a href=#522 id=522 data-nosnippet>522</a>    root.present()?;
+<a href=#523 id=523 data-nosnippet>523</a>    Ok(())
+<a href=#524 id=524 data-nosnippet>524</a>}
+<a href=#525 id=525 data-nosnippet>525</a>```
+<a href=#526 id=526 data-nosnippet>526</a>
+<a href=#527 id=527 data-nosnippet>527</a>![](https://plotters-rs.github.io/plotters-doc-data/3.png)
+<a href=#528 id=528 data-nosnippet>528</a>
+<a href=#529 id=529 data-nosnippet>529</a>### Composable Elements
+<a href=#530 id=530 data-nosnippet>530</a>
+<a href=#531 id=531 data-nosnippet>531</a>Besides the built-in elements, elements can be composed into a logical group we called composed elements.
+<a href=#532 id=532 data-nosnippet>532</a>When composing new elements, the upper-left corner is given in the target coordinate, and a new pixel-based
+<a href=#533 id=533 data-nosnippet>533</a>coordinate which has the upper-left corner defined as `(0,0)` is used for further element composition.
+<a href=#534 id=534 data-nosnippet>534</a>
+<a href=#535 id=535 data-nosnippet>535</a>For example, we can have an element which includes a dot and its coordinate.
+<a href=#536 id=536 data-nosnippet>536</a>
+<a href=#537 id=537 data-nosnippet>537</a>```rust
+<a href=#538 id=538 data-nosnippet>538</a>use plotters::prelude::*;
+<a href=#539 id=539 data-nosnippet>539</a>use plotters::coord::types::RangedCoordf32;
+<a href=#540 id=540 data-nosnippet>540</a>
+<a href=#541 id=541 data-nosnippet>541</a>fn main() -&gt; Result&lt;(), Box&lt;dyn std::error::Error&gt;&gt; {
+<a href=#542 id=542 data-nosnippet>542</a>    let root = BitMapBackend::new("plotters-doc-data/4.png", (640, 480)).into_drawing_area();
+<a href=#543 id=543 data-nosnippet>543</a>
+<a href=#544 id=544 data-nosnippet>544</a>    root.fill(&amp;RGBColor(240, 200, 200))?;
+<a href=#545 id=545 data-nosnippet>545</a>
+<a href=#546 id=546 data-nosnippet>546</a>    let root = root.apply_coord_spec(Cartesian2d::&lt;RangedCoordf32, RangedCoordf32&gt;::new(
+<a href=#547 id=547 data-nosnippet>547</a>        0f32..1f32,
+<a href=#548 id=548 data-nosnippet>548</a>        0f32..1f32,
+<a href=#549 id=549 data-nosnippet>549</a>        (0..640, 0..480),
+<a href=#550 id=550 data-nosnippet>550</a>    ));
+<a href=#551 id=551 data-nosnippet>551</a>
+<a href=#552 id=552 data-nosnippet>552</a>    let dot_and_label = |x: f32, y: f32| {
+<a href=#553 id=553 data-nosnippet>553</a>        return EmptyElement::at((x, y))
+<a href=#554 id=554 data-nosnippet>554</a>            + Circle::new((0, 0), 3, ShapeStyle::from(&amp;BLACK).filled())
+<a href=#555 id=555 data-nosnippet>555</a>            + Text::new(
+<a href=#556 id=556 data-nosnippet>556</a>                format!("({:.2},{:.2})", x, y),
+<a href=#557 id=557 data-nosnippet>557</a>                (10, 0),
+<a href=#558 id=558 data-nosnippet>558</a>                ("sans-serif", 15.0).into_font(),
+<a href=#559 id=559 data-nosnippet>559</a>            );
+<a href=#560 id=560 data-nosnippet>560</a>    };
+<a href=#561 id=561 data-nosnippet>561</a>
+<a href=#562 id=562 data-nosnippet>562</a>    root.draw(&amp;dot_and_label(0.5, 0.6))?;
+<a href=#563 id=563 data-nosnippet>563</a>    root.draw(&amp;dot_and_label(0.25, 0.33))?;
+<a href=#564 id=564 data-nosnippet>564</a>    root.draw(&amp;dot_and_label(0.8, 0.8))?;
+<a href=#565 id=565 data-nosnippet>565</a>    root.present()?;
+<a href=#566 id=566 data-nosnippet>566</a>    Ok(())
+<a href=#567 id=567 data-nosnippet>567</a>}
+<a href=#568 id=568 data-nosnippet>568</a>```
+<a href=#569 id=569 data-nosnippet>569</a>
+<a href=#570 id=570 data-nosnippet>570</a>![](https://plotters-rs.github.io/plotters-doc-data/4.png)
+<a href=#571 id=571 data-nosnippet>571</a>
+<a href=#572 id=572 data-nosnippet>572</a>### Chart Context
+<a href=#573 id=573 data-nosnippet>573</a>
+<a href=#574 id=574 data-nosnippet>574</a>In order to draw a chart, Plotters needs a data object built on top of the drawing area called `ChartContext`.
+<a href=#575 id=575 data-nosnippet>575</a>The chart context defines even higher level constructs compare to the drawing area.
+<a href=#576 id=576 data-nosnippet>576</a>For example, you can define the label areas, meshes, and put a data series onto the drawing area with the help
+<a href=#577 id=577 data-nosnippet>577</a>of the chart context object.
+<a href=#578 id=578 data-nosnippet>578</a>
+<a href=#579 id=579 data-nosnippet>579</a>```rust
+<a href=#580 id=580 data-nosnippet>580</a>use plotters::prelude::*;
+<a href=#581 id=581 data-nosnippet>581</a>fn main() -&gt; Result&lt;(), Box&lt;dyn std::error::Error&gt;&gt; {
+<a href=#582 id=582 data-nosnippet>582</a>    let root = BitMapBackend::new("plotters-doc-data/5.png", (640, 480)).into_drawing_area();
+<a href=#583 id=583 data-nosnippet>583</a>    root.fill(&amp;WHITE);
+<a href=#584 id=584 data-nosnippet>584</a>    let root = root.margin(10, 10, 10, 10);
+<a href=#585 id=585 data-nosnippet>585</a>    // After this point, we should be able to construct a chart context
+<a href=#586 id=586 data-nosnippet>586</a>    let mut chart = ChartBuilder::on(&amp;root)
+<a href=#587 id=587 data-nosnippet>587</a>        // Set the caption of the chart
+<a href=#588 id=588 data-nosnippet>588</a>        .caption("This is our first plot", ("sans-serif", 40).into_font())
+<a href=#589 id=589 data-nosnippet>589</a>        // Set the size of the label region
+<a href=#590 id=590 data-nosnippet>590</a>        .x_label_area_size(20)
+<a href=#591 id=591 data-nosnippet>591</a>        .y_label_area_size(40)
+<a href=#592 id=592 data-nosnippet>592</a>        // Finally attach a coordinate on the drawing area and make a chart context
+<a href=#593 id=593 data-nosnippet>593</a>        .build_cartesian_2d(0f32..10f32, 0f32..10f32)?;
+<a href=#594 id=594 data-nosnippet>594</a>
+<a href=#595 id=595 data-nosnippet>595</a>    // Then we can draw a mesh
+<a href=#596 id=596 data-nosnippet>596</a>    chart
+<a href=#597 id=597 data-nosnippet>597</a>        .configure_mesh()
+<a href=#598 id=598 data-nosnippet>598</a>        // We can customize the maximum number of labels allowed for each axis
+<a href=#599 id=599 data-nosnippet>599</a>        .x_labels(5)
+<a href=#600 id=600 data-nosnippet>600</a>        .y_labels(5)
+<a href=#601 id=601 data-nosnippet>601</a>        // We can also change the format of the label text
+<a href=#602 id=602 data-nosnippet>602</a>        .y_label_formatter(&amp;|x| format!("{:.3}", x))
+<a href=#603 id=603 data-nosnippet>603</a>        .draw()?;
+<a href=#604 id=604 data-nosnippet>604</a>
+<a href=#605 id=605 data-nosnippet>605</a>    // And we can draw something in the drawing area
+<a href=#606 id=606 data-nosnippet>606</a>    chart.draw_series(LineSeries::new(
+<a href=#607 id=607 data-nosnippet>607</a>        vec![(0.0, 0.0), (5.0, 5.0), (8.0, 7.0)],
+<a href=#608 id=608 data-nosnippet>608</a>        &amp;RED,
+<a href=#609 id=609 data-nosnippet>609</a>    ))?;
+<a href=#610 id=610 data-nosnippet>610</a>    // Similarly, we can draw point series
+<a href=#611 id=611 data-nosnippet>611</a>    chart.draw_series(PointSeries::of_element(
+<a href=#612 id=612 data-nosnippet>612</a>        vec![(0.0, 0.0), (5.0, 5.0), (8.0, 7.0)],
+<a href=#613 id=613 data-nosnippet>613</a>        5,
+<a href=#614 id=614 data-nosnippet>614</a>        &amp;RED,
+<a href=#615 id=615 data-nosnippet>615</a>        &amp;|c, s, st| {
+<a href=#616 id=616 data-nosnippet>616</a>            return EmptyElement::at(c)    // We want to construct a composed element on-the-fly
+<a href=#617 id=617 data-nosnippet>617</a>            + Circle::new((0,0),s,st.filled()) // At this point, the new pixel coordinate is established
+<a href=#618 id=618 data-nosnippet>618</a>            + Text::new(format!("{:?}", c), (10, 0), ("sans-serif", 10).into_font());
+<a href=#619 id=619 data-nosnippet>619</a>        },
+<a href=#620 id=620 data-nosnippet>620</a>    ))?;
+<a href=#621 id=621 data-nosnippet>621</a>    root.present()?;
+<a href=#622 id=622 data-nosnippet>622</a>    Ok(())
+<a href=#623 id=623 data-nosnippet>623</a>}
+<a href=#624 id=624 data-nosnippet>624</a>```
+<a href=#625 id=625 data-nosnippet>625</a>
+<a href=#626 id=626 data-nosnippet>626</a>![](https://plotters-rs.github.io/plotters-doc-data/5.png)
+<a href=#627 id=627 data-nosnippet>627</a>
+<a href=#628 id=628 data-nosnippet>628</a>## Misc
+<a href=#629 id=629 data-nosnippet>629</a>
+<a href=#630 id=630 data-nosnippet>630</a>### Development Version
+<a href=#631 id=631 data-nosnippet>631</a>
+<a href=#632 id=632 data-nosnippet>632</a>Find the latest development version of Plotters on [GitHub](https://github.com/plotters-rs/plotters.git).
+<a href=#633 id=633 data-nosnippet>633</a>Clone the repository and learn more about the Plotters API and ways to contribute. Your help is needed!
+<a href=#634 id=634 data-nosnippet>634</a>
+<a href=#635 id=635 data-nosnippet>635</a>If you want to add the development version of Plotters to your project, add the following to your `Cargo.toml`:
+<a href=#636 id=636 data-nosnippet>636</a>
+<a href=#637 id=637 data-nosnippet>637</a>```toml
+<a href=#638 id=638 data-nosnippet>638</a>[dependencies]
+<a href=#639 id=639 data-nosnippet>639</a>plotters = { git = "https://github.com/plotters-rs/plotters.git" }
+<a href=#640 id=640 data-nosnippet>640</a>```
+<a href=#641 id=641 data-nosnippet>641</a>
+<a href=#642 id=642 data-nosnippet>642</a>### Reducing Depending Libraries &amp;&amp; Turning Off Backends
+<a href=#643 id=643 data-nosnippet>643</a>Plotters now supports use features to control the backend dependencies. By default, `BitMapBackend` and `SVGBackend` are supported,
+<a href=#644 id=644 data-nosnippet>644</a>use `default-features = false` in the dependency description in `Cargo.toml` and you can cherry-pick the backend implementations.
+<a href=#645 id=645 data-nosnippet>645</a>
+<a href=#646 id=646 data-nosnippet>646</a>- `svg` Enable the `SVGBackend`
+<a href=#647 id=647 data-nosnippet>647</a>- `bitmap` Enable the `BitMapBackend`
+<a href=#648 id=648 data-nosnippet>648</a>
+<a href=#649 id=649 data-nosnippet>649</a>For example, the following dependency description would avoid compiling with bitmap support:
+<a href=#650 id=650 data-nosnippet>650</a>
+<a href=#651 id=651 data-nosnippet>651</a>```toml
+<a href=#652 id=652 data-nosnippet>652</a>[dependencies]
+<a href=#653 id=653 data-nosnippet>653</a>plotters = { git = "https://github.com/plotters-rs/plotters.git", default-features = false, features = ["svg"] }
+<a href=#654 id=654 data-nosnippet>654</a>```
+<a href=#655 id=655 data-nosnippet>655</a>
+<a href=#656 id=656 data-nosnippet>656</a>The library also allows consumers to make use of the [`Palette`](https://crates.io/crates/palette/) crate's color types by default.
+<a href=#657 id=657 data-nosnippet>657</a>This behavior can also be turned off by setting `default-features = false`.
+<a href=#658 id=658 data-nosnippet>658</a>
+<a href=#659 id=659 data-nosnippet>659</a>### List of Features
+<a href=#660 id=660 data-nosnippet>660</a>
+<a href=#661 id=661 data-nosnippet>661</a>This is the full list of features that is defined by `Plotters` crate.
+<a href=#662 id=662 data-nosnippet>662</a>Use `default-features = false` to disable those default enabled features,
+<a href=#663 id=663 data-nosnippet>663</a>and then you should be able to cherry-pick what features you want to include into `Plotters` crate.
+<a href=#664 id=664 data-nosnippet>664</a>By doing so, you can minimize the number of dependencies down to only `itertools` and compile time is less than 6s.
+<a href=#665 id=665 data-nosnippet>665</a>
+<a href=#666 id=666 data-nosnippet>666</a>The following list is a complete list of features that can be opted in or out.
+<a href=#667 id=667 data-nosnippet>667</a>
+<a href=#668 id=668 data-nosnippet>668</a>- Tier 1 drawing backends
+<a href=#669 id=669 data-nosnippet>669</a>
+<a href=#670 id=670 data-nosnippet>670</a>| Name    |  Description | Additional Dependency |Default?|
+<a href=#671 id=671 data-nosnippet>671</a>|---------|--------------|--------|------------|
+<a href=#672 id=672 data-nosnippet>672</a>| bitmap\_encoder  | Allow `BitMapBackend` to save the result to bitmap files | image, rusttype, font-kit | Yes |
+<a href=#673 id=673 data-nosnippet>673</a>| svg\_backend     | Enable `SVGBackend` Support | None | Yes |
+<a href=#674 id=674 data-nosnippet>674</a>| bitmap\_gif| Opt-in GIF animation Rendering support for `BitMapBackend`, implies `bitmap` enabled | gif | Yes |
+<a href=#675 id=675 data-nosnippet>675</a>
+<a href=#676 id=676 data-nosnippet>676</a>- Font manipulation features
+<a href=#677 id=677 data-nosnippet>677</a>
+<a href=#678 id=678 data-nosnippet>678</a>| Name     | Description                              | Additional Dependency | Default? |
+<a href=#679 id=679 data-nosnippet>679</a>|----------|------------------------------------------|-----------------------|----------|
+<a href=#680 id=680 data-nosnippet>680</a>| ttf      | Allows TrueType font support             | font-kit              | Yes      |
+<a href=#681 id=681 data-nosnippet>681</a>| ab_glyph | Skips loading system fonts, unlike `ttf` | ab_glyph              | No       |
+<a href=#682 id=682 data-nosnippet>682</a>
+<a href=#683 id=683 data-nosnippet>683</a>`ab_glyph` supports TrueType and OpenType fonts, but does not attempt to
+<a href=#684 id=684 data-nosnippet>684</a>load fonts provided by the system on which it is running.
+<a href=#685 id=685 data-nosnippet>685</a>It is pure Rust, and easier to cross compile.
+<a href=#686 id=686 data-nosnippet>686</a>To use this, you *must* call `plotters::style::register_font` before
+<a href=#687 id=687 data-nosnippet>687</a>using any `plotters` functions which require the ability to render text.
+<a href=#688 id=688 data-nosnippet>688</a>This function only exists when the `ab_glyph` feature is enabled.
+<a href=#689 id=689 data-nosnippet>689</a>```rust,ignore
+<a href=#690 id=690 data-nosnippet>690</a>/// Register a font in the fonts table.
+<a href=#691 id=691 data-nosnippet>691</a>///
+<a href=#692 id=692 data-nosnippet>692</a>/// The `name` parameter gives the name this font shall be referred to
+<a href=#693 id=693 data-nosnippet>693</a>/// in the other APIs, like `"sans-serif"`.
+<a href=#694 id=694 data-nosnippet>694</a>///
+<a href=#695 id=695 data-nosnippet>695</a>/// Unprovided font styles for a given name will fallback to `FontStyle::Normal`
+<a href=#696 id=696 data-nosnippet>696</a>/// if that is available for that name, when other functions lookup fonts which
+<a href=#697 id=697 data-nosnippet>697</a>/// are registered with this function.
+<a href=#698 id=698 data-nosnippet>698</a>///
+<a href=#699 id=699 data-nosnippet>699</a>/// The `bytes` parameter should be the complete contents
+<a href=#700 id=700 data-nosnippet>700</a>/// of an OpenType font file, like:
+<a href=#701 id=701 data-nosnippet>701</a>/// ```ignore
+<a href=#702 id=702 data-nosnippet>702</a>/// include_bytes!("FiraGO-Regular.otf")
+<a href=#703 id=703 data-nosnippet>703</a>/// ```
+<a href=#704 id=704 data-nosnippet>704</a>pub fn register_font(
+<a href=#705 id=705 data-nosnippet>705</a>    name: &amp;str,
+<a href=#706 id=706 data-nosnippet>706</a>    style: FontStyle,
+<a href=#707 id=707 data-nosnippet>707</a>    bytes: &amp;'static [u8],
+<a href=#708 id=708 data-nosnippet>708</a>) -&gt; Result&lt;(), InvalidFont&gt;
+<a href=#709 id=709 data-nosnippet>709</a>```
+<a href=#710 id=710 data-nosnippet>710</a>
+<a href=#711 id=711 data-nosnippet>711</a>- Coordinate features
+<a href=#712 id=712 data-nosnippet>712</a>
+<a href=#713 id=713 data-nosnippet>713</a>| Name    |  Description | Additional Dependency |Default?|
+<a href=#714 id=714 data-nosnippet>714</a>|---------|--------------|--------|------------|
+<a href=#715 id=715 data-nosnippet>715</a>| datetime | Enable the date and time coordinate support | chrono | Yes |
+<a href=#716 id=716 data-nosnippet>716</a>
+<a href=#717 id=717 data-nosnippet>717</a>- Element, series and util functions
+<a href=#718 id=718 data-nosnippet>718</a>
+<a href=#719 id=719 data-nosnippet>719</a>| Name    |  Description | Additional Dependency |Default?|
+<a href=#720 id=720 data-nosnippet>720</a>|---------|--------------|--------|------------|
+<a href=#721 id=721 data-nosnippet>721</a>| errorbar | The errorbar element support | None | Yes |
+<a href=#722 id=722 data-nosnippet>722</a>| candlestick | The candlestick element support | None | Yes |
+<a href=#723 id=723 data-nosnippet>723</a>| boxplot | The boxplot element support | None | Yes |
+<a href=#724 id=724 data-nosnippet>724</a>| area\_series | The area series support | None | Yes |
+<a href=#725 id=725 data-nosnippet>725</a>| line\_series | The line series support | None | Yes |
+<a href=#726 id=726 data-nosnippet>726</a>| histogram | The histogram series support | None | Yes |
+<a href=#727 id=727 data-nosnippet>727</a>| point\_series| The point series support | None | Yes |
+<a href=#728 id=728 data-nosnippet>728</a>
+<a href=#729 id=729 data-nosnippet>729</a>- Misc
+<a href=#730 id=730 data-nosnippet>730</a>
+<a href=#731 id=731 data-nosnippet>731</a>| Name    |  Description | Additional Dependency |Default?|
+<a href=#732 id=732 data-nosnippet>732</a>|---------|--------------|--------|------------|
+<a href=#733 id=733 data-nosnippet>733</a>| deprecated\_items | This feature allows use of deprecated items which is going to be removed in the future | None | Yes |
+<a href=#734 id=734 data-nosnippet>734</a>| debug | Enable the code used for debugging | None | No |
+<a href=#735 id=735 data-nosnippet>735</a>
+<a href=#736 id=736 data-nosnippet>736</a>
+<a href=#737 id=737 data-nosnippet>737</a>## FAQ List
+<a href=#738 id=738 data-nosnippet>738</a>
+<a href=#739 id=739 data-nosnippet>739</a>* Why does the WASM example break on my machine ?
+<a href=#740 id=740 data-nosnippet>740</a>
+<a href=#741 id=741 data-nosnippet>741</a>    The WASM example requires using `wasm32` target to build. Using `cargo build` is likely to use the default target
+<a href=#742 id=742 data-nosnippet>742</a>    which in most of the case is any of the x86 target. Thus you need add `--target=wasm32-unknown-unknown` in the cargo
+<a href=#743 id=743 data-nosnippet>743</a>    parameter list  to build it.
+<a href=#744 id=744 data-nosnippet>744</a>
+<a href=#745 id=745 data-nosnippet>745</a>* How to draw text/circle/point/rectangle/... on the top of chart ?
+<a href=#746 id=746 data-nosnippet>746</a>
+<a href=#747 id=747 data-nosnippet>747</a>    As you may have realized, Plotters is a drawing library rather than a traditional data plotting library,
+<a href=#748 id=748 data-nosnippet>748</a>    you have the freedom to draw anything you want on the drawing area.
+<a href=#749 id=749 data-nosnippet>749</a>    Use `DrawingArea::draw` to draw any element on the drawing area.
+<a href=#750 id=750 data-nosnippet>750</a>
+<a href=#751 id=751 data-nosnippet>751</a>* Where can I find the backend code ?
+<a href=#752 id=752 data-nosnippet>752</a>
+<a href=#753 id=753 data-nosnippet>753</a>    Since Plotters 0.3, all drawing backends are independent crate from the main Plotters crate.
+<a href=#754 id=754 data-nosnippet>754</a>    Use the following link to find the backend code:
+<a href=#755 id=755 data-nosnippet>755</a>
+<a href=#756 id=756 data-nosnippet>756</a>    - [Bitmap Backend](https://github.com/plotters-rs/plotters-bitmap.git)
+<a href=#757 id=757 data-nosnippet>757</a>    - [SVG Backend](https://github.com/plotters-rs/plotters-svg.git)
+<a href=#758 id=758 data-nosnippet>758</a>    - [HTML5 Canvas Backend](https://github.com/plotters-rs/plotters-canvas.git)
+<a href=#759 id=759 data-nosnippet>759</a>    - [GTK/Cairo Backend](https://github.com/plotters-rs/plotters-cairo.git)
+<a href=#760 id=760 data-nosnippet>760</a>
+<a href=#761 id=761 data-nosnippet>761</a>* How to check if a backend writes to a file successfully ?
+<a href=#762 id=762 data-nosnippet>762</a>
+<a href=#763 id=763 data-nosnippet>763</a>    The behavior of Plotters backend is consistent with the standard library.
+<a href=#764 id=764 data-nosnippet>764</a>    When the backend instance is dropped, [`crate::drawing::DrawingArea::present()`] or `Backend::present()` is called automatically
+<a href=#765 id=765 data-nosnippet>765</a>    whenever is needed. When the `present()` method is called from `drop`, any error will be silently ignored.
+<a href=#766 id=766 data-nosnippet>766</a>
+<a href=#767 id=767 data-nosnippet>767</a>    In the case that error handling is important, you need manually call the `present()` method before the backend gets dropped.
+<a href=#768 id=768 data-nosnippet>768</a>    For more information, please see the examples.
+<a href=#769 id=769 data-nosnippet>769</a>
+<a href=#770 id=770 data-nosnippet>770</a>
+<a href=#771 id=771 data-nosnippet>771</a>&lt;style&gt;
+<a href=#772 id=772 data-nosnippet>772</a>    img {
+<a href=#773 id=773 data-nosnippet>773</a>            display: block;
+<a href=#774 id=774 data-nosnippet>774</a>            margin: 0 auto;
+<a href=#775 id=775 data-nosnippet>775</a>            max-width: 500px;
+<a href=#776 id=776 data-nosnippet>776</a>    }
+<a href=#777 id=777 data-nosnippet>777</a>    .galleryItem {
+<a href=#778 id=778 data-nosnippet>778</a>            width: 250px;
+<a href=#779 id=779 data-nosnippet>779</a>            display: inline-block;
+<a href=#780 id=780 data-nosnippet>780</a>    }
+<a href=#781 id=781 data-nosnippet>781</a>    .galleryImg {
+<a href=#782 id=782 data-nosnippet>782</a>            max-width: 100%;
+<a href=#783 id=783 data-nosnippet>783</a>    }
+<a href=#784 id=784 data-nosnippet>784</a>    .galleryText {
+<a href=#785 id=785 data-nosnippet>785</a>            text-align: center;
+<a href=#786 id=786 data-nosnippet>786</a>    }
+<a href=#787 id=787 data-nosnippet>787</a>&lt;/style&gt;
+<a href=#788 id=788 data-nosnippet>788</a>
+<a href=#789 id=789 data-nosnippet>789</a>
+<a href=#790 id=790 data-nosnippet>790</a>*/
+<a href=#791 id=791 data-nosnippet>791</a></span><span class="kw">pub mod </span>chart;
+<a href=#792 id=792 data-nosnippet>792</a><span class="kw">pub mod </span>coord;
+<a href=#793 id=793 data-nosnippet>793</a><span class="kw">pub mod </span>data;
+<a href=#794 id=794 data-nosnippet>794</a><span class="kw">pub mod </span>drawing;
+<a href=#795 id=795 data-nosnippet>795</a><span class="kw">pub mod </span>element;
+<a href=#796 id=796 data-nosnippet>796</a><span class="kw">pub mod </span>series;
+<a href=#797 id=797 data-nosnippet>797</a><span class="kw">pub mod </span>style;
+<a href=#798 id=798 data-nosnippet>798</a>
+<a href=#799 id=799 data-nosnippet>799</a><span class="doccomment">/// Evaluation Context for Rust. See [the evcxr crate](https://crates.io/crates/evcxr) for more information.
+<a href=#800 id=800 data-nosnippet>800</a></span><span class="attr">#[cfg(feature = <span class="string">"evcxr"</span>)]
+<a href=#801 id=801 data-nosnippet>801</a>#[cfg_attr(doc_cfg, doc(cfg(feature = <span class="string">"evcxr"</span>)))]
+<a href=#802 id=802 data-nosnippet>802</a></span><span class="kw">pub mod </span>evcxr;
+<a href=#803 id=803 data-nosnippet>803</a>
+<a href=#804 id=804 data-nosnippet>804</a><span class="attr">#[cfg(test)]
+<a href=#805 id=805 data-nosnippet>805</a></span><span class="kw">pub use </span><span class="kw">crate</span>::drawing::{check_color, create_mocked_drawing_area};
+<a href=#806 id=806 data-nosnippet>806</a>
+<a href=#807 id=807 data-nosnippet>807</a><span class="doccomment">/// The module imports the most commonly used types and modules in Plotters
+<a href=#808 id=808 data-nosnippet>808</a></span><span class="kw">pub mod </span>prelude {
+<a href=#809 id=809 data-nosnippet>809</a>    <span class="comment">// Chart related types
+<a href=#810 id=810 data-nosnippet>810</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::chart::{ChartBuilder, ChartContext, LabelAreaPosition, SeriesLabelPosition};
+<a href=#811 id=811 data-nosnippet>811</a>
+<a href=#812 id=812 data-nosnippet>812</a>    <span class="comment">// Coordinates
+<a href=#813 id=813 data-nosnippet>813</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::coord::{
+<a href=#814 id=814 data-nosnippet>814</a>        cartesian::Cartesian2d,
+<a href=#815 id=815 data-nosnippet>815</a>        combinators::{
+<a href=#816 id=816 data-nosnippet>816</a>            make_partial_axis, BindKeyPointMethod, BindKeyPoints, BuildNestedCoord, GroupBy,
+<a href=#817 id=817 data-nosnippet>817</a>            IntoLinspace, IntoLogRange, IntoPartialAxis, Linspace, LogCoord, LogScalable,
+<a href=#818 id=818 data-nosnippet>818</a>            NestedRange, NestedValue, ToGroupByRange,
+<a href=#819 id=819 data-nosnippet>819</a>        },
+<a href=#820 id=820 data-nosnippet>820</a>        ranged1d::{DiscreteRanged, IntoSegmentedCoord, Ranged, SegmentValue},
+<a href=#821 id=821 data-nosnippet>821</a>        CoordTranslate,
+<a href=#822 id=822 data-nosnippet>822</a>    };
+<a href=#823 id=823 data-nosnippet>823</a>
+<a href=#824 id=824 data-nosnippet>824</a>    <span class="attr">#[allow(deprecated)]
+<a href=#825 id=825 data-nosnippet>825</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::coord::combinators::LogRange;
+<a href=#826 id=826 data-nosnippet>826</a>
+<a href=#827 id=827 data-nosnippet>827</a>    <span class="attr">#[cfg(feature = <span class="string">"chrono"</span>)]
+<a href=#828 id=828 data-nosnippet>828</a>    #[cfg_attr(doc_cfg, doc(cfg(feature = <span class="string">"chrono"</span>)))]
+<a href=#829 id=829 data-nosnippet>829</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::coord::types::{
+<a href=#830 id=830 data-nosnippet>830</a>        IntoMonthly, IntoYearly, RangedDate, RangedDateTime, RangedDuration,
+<a href=#831 id=831 data-nosnippet>831</a>    };
+<a href=#832 id=832 data-nosnippet>832</a>
+<a href=#833 id=833 data-nosnippet>833</a>    <span class="comment">// Re-export the backend for backward compatibility
+<a href=#834 id=834 data-nosnippet>834</a>    </span><span class="kw">pub use </span>plotters_backend::DrawingBackend;
+<a href=#835 id=835 data-nosnippet>835</a>
+<a href=#836 id=836 data-nosnippet>836</a>    <span class="kw">pub use </span><span class="kw">crate</span>::drawing::<span class="kw-2">*</span>;
+<a href=#837 id=837 data-nosnippet>837</a>
+<a href=#838 id=838 data-nosnippet>838</a>    <span class="comment">// Series helpers
+<a href=#839 id=839 data-nosnippet>839</a>    </span><span class="attr">#[cfg(feature = <span class="string">"area_series"</span>)]
+<a href=#840 id=840 data-nosnippet>840</a>    #[cfg_attr(doc_cfg, doc(cfg(feature = <span class="string">"area_series"</span>)))]
+<a href=#841 id=841 data-nosnippet>841</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::series::AreaSeries;
+<a href=#842 id=842 data-nosnippet>842</a>    <span class="attr">#[cfg(feature = <span class="string">"histogram"</span>)]
+<a href=#843 id=843 data-nosnippet>843</a>    #[cfg_attr(doc_cfg, doc(cfg(feature = <span class="string">"histogram"</span>)))]
+<a href=#844 id=844 data-nosnippet>844</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::series::Histogram;
+<a href=#845 id=845 data-nosnippet>845</a>    <span class="attr">#[cfg(feature = <span class="string">"point_series"</span>)]
+<a href=#846 id=846 data-nosnippet>846</a>    #[cfg_attr(doc_cfg, doc(cfg(feature = <span class="string">"point_series"</span>)))]
+<a href=#847 id=847 data-nosnippet>847</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::series::PointSeries;
+<a href=#848 id=848 data-nosnippet>848</a>    <span class="attr">#[cfg(feature = <span class="string">"surface_series"</span>)]
+<a href=#849 id=849 data-nosnippet>849</a>    #[cfg_attr(doc_cfg, doc(cfg(feature = <span class="string">"surface_series"</span>)))]
+<a href=#850 id=850 data-nosnippet>850</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::series::SurfaceSeries;
+<a href=#851 id=851 data-nosnippet>851</a>    <span class="attr">#[cfg(feature = <span class="string">"line_series"</span>)]
+<a href=#852 id=852 data-nosnippet>852</a>    #[cfg_attr(doc_cfg, doc(cfg(feature = <span class="string">"line_series"</span>)))]
+<a href=#853 id=853 data-nosnippet>853</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::series::{DashedLineSeries, DottedLineSeries, LineSeries};
+<a href=#854 id=854 data-nosnippet>854</a>
+<a href=#855 id=855 data-nosnippet>855</a>    <span class="comment">// Styles
+<a href=#856 id=856 data-nosnippet>856</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::style::{BLACK, BLUE, CYAN, GREEN, MAGENTA, RED, TRANSPARENT, WHITE, YELLOW};
+<a href=#857 id=857 data-nosnippet>857</a>
+<a href=#858 id=858 data-nosnippet>858</a>    <span class="attr">#[cfg(feature = <span class="string">"full_palette"</span>)]
+<a href=#859 id=859 data-nosnippet>859</a>    #[cfg_attr(doc_cfg, doc(cfg(feature = <span class="string">"full_palette"</span>)))]
+<a href=#860 id=860 data-nosnippet>860</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::style::full_palette;
+<a href=#861 id=861 data-nosnippet>861</a>
+<a href=#862 id=862 data-nosnippet>862</a>    <span class="attr">#[cfg(feature = <span class="string">"colormaps"</span>)]
+<a href=#863 id=863 data-nosnippet>863</a>    #[cfg_attr(doc_cfg, doc(cfg(feature = <span class="string">"colormaps"</span>)))]
+<a href=#864 id=864 data-nosnippet>864</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::style::colors::colormaps::<span class="kw-2">*</span>;
+<a href=#865 id=865 data-nosnippet>865</a>
+<a href=#866 id=866 data-nosnippet>866</a>    <span class="kw">pub use </span><span class="kw">crate</span>::style::{
+<a href=#867 id=867 data-nosnippet>867</a>        AsRelative, Color, FontDesc, FontFamily, FontStyle, FontTransform, HSLColor, IntoFont,
+<a href=#868 id=868 data-nosnippet>868</a>        IntoTextStyle, Palette, Palette100, Palette99, Palette9999, PaletteColor, RGBAColor,
+<a href=#869 id=869 data-nosnippet>869</a>        RGBColor, ShapeStyle, TextStyle,
+<a href=#870 id=870 data-nosnippet>870</a>    };
+<a href=#871 id=871 data-nosnippet>871</a>
+<a href=#872 id=872 data-nosnippet>872</a>    <span class="comment">// Elements
+<a href=#873 id=873 data-nosnippet>873</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::element::{
+<a href=#874 id=874 data-nosnippet>874</a>        Circle, Cross, Cubiod, DynElement, EmptyElement, IntoDynElement, MultiLineText,
+<a href=#875 id=875 data-nosnippet>875</a>        PathElement, Pie, Pixel, Polygon, Rectangle, Text, TriangleMarker,
+<a href=#876 id=876 data-nosnippet>876</a>    };
+<a href=#877 id=877 data-nosnippet>877</a>
+<a href=#878 id=878 data-nosnippet>878</a>    <span class="attr">#[cfg(feature = <span class="string">"boxplot"</span>)]
+<a href=#879 id=879 data-nosnippet>879</a>    #[cfg_attr(doc_cfg, doc(cfg(feature = <span class="string">"boxplot"</span>)))]
+<a href=#880 id=880 data-nosnippet>880</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::element::Boxplot;
+<a href=#881 id=881 data-nosnippet>881</a>    <span class="attr">#[cfg(feature = <span class="string">"candlestick"</span>)]
+<a href=#882 id=882 data-nosnippet>882</a>    #[cfg_attr(doc_cfg, doc(cfg(feature = <span class="string">"candlestick"</span>)))]
+<a href=#883 id=883 data-nosnippet>883</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::element::CandleStick;
+<a href=#884 id=884 data-nosnippet>884</a>    <span class="attr">#[cfg(feature = <span class="string">"errorbar"</span>)]
+<a href=#885 id=885 data-nosnippet>885</a>    #[cfg_attr(doc_cfg, doc(cfg(feature = <span class="string">"errorbar"</span>)))]
+<a href=#886 id=886 data-nosnippet>886</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::element::ErrorBar;
+<a href=#887 id=887 data-nosnippet>887</a>
+<a href=#888 id=888 data-nosnippet>888</a>    <span class="attr">#[cfg(feature = <span class="string">"bitmap_backend"</span>)]
+<a href=#889 id=889 data-nosnippet>889</a>    #[cfg_attr(doc_cfg, doc(cfg(feature = <span class="string">"bitmap_backend"</span>)))]
+<a href=#890 id=890 data-nosnippet>890</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::element::BitMapElement;
+<a href=#891 id=891 data-nosnippet>891</a>
+<a href=#892 id=892 data-nosnippet>892</a>    <span class="comment">// Data
+<a href=#893 id=893 data-nosnippet>893</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::data::Quartiles;
+<a href=#894 id=894 data-nosnippet>894</a>
+<a href=#895 id=895 data-nosnippet>895</a>    <span class="comment">// TODO: This should be deprecated and completely removed
+<a href=#896 id=896 data-nosnippet>896</a>    </span><span class="attr">#[cfg(feature = <span class="string">"deprecated_items"</span>)]
+<a href=#897 id=897 data-nosnippet>897</a>    #[cfg_attr(doc_cfg, doc(cfg(feature = <span class="string">"deprecated_items"</span>)))]
+<a href=#898 id=898 data-nosnippet>898</a>    #[allow(deprecated)]
+<a href=#899 id=899 data-nosnippet>899</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::element::Path;
+<a href=#900 id=900 data-nosnippet>900</a>
+<a href=#901 id=901 data-nosnippet>901</a>    <span class="attr">#[allow(type_alias_bounds)]
+<a href=#902 id=902 data-nosnippet>902</a>    </span><span class="doccomment">/// The type used to returns a drawing operation that can be failed
+<a href=#903 id=903 data-nosnippet>903</a>    /// - `T`: The return type
+<a href=#904 id=904 data-nosnippet>904</a>    /// - `D`: The drawing backend type
+<a href=#905 id=905 data-nosnippet>905</a>    </span><span class="kw">pub type </span>DrawResult&lt;T, D: DrawingBackend&gt; =
+<a href=#906 id=906 data-nosnippet>906</a>        <span class="prelude-ty">Result</span>&lt;T, <span class="kw">crate</span>::drawing::DrawingAreaErrorKind&lt;D::ErrorType&gt;&gt;;
+<a href=#907 id=907 data-nosnippet>907</a>
+<a href=#908 id=908 data-nosnippet>908</a>    <span class="attr">#[cfg(feature = <span class="string">"evcxr"</span>)]
+<a href=#909 id=909 data-nosnippet>909</a>    #[cfg_attr(doc_cfg, doc(cfg(feature = <span class="string">"evcxr"</span>)))]
+<a href=#910 id=910 data-nosnippet>910</a>    </span><span class="kw">pub use </span><span class="kw">crate</span>::evcxr::evcxr_figure;
+<a href=#911 id=911 data-nosnippet>911</a>
+<a href=#912 id=912 data-nosnippet>912</a>    <span class="comment">// Re-export tier 1 backends for backward compatibility
+<a href=#913 id=913 data-nosnippet>913</a>    </span><span class="attr">#[cfg(feature = <span class="string">"bitmap_backend"</span>)]
+<a href=#914 id=914 data-nosnippet>914</a>    #[cfg_attr(doc_cfg, doc(cfg(feature = <span class="string">"bitmap_backend"</span>)))]
+<a href=#915 id=915 data-nosnippet>915</a>    </span><span class="kw">pub use </span>plotters_bitmap::BitMapBackend;
+<a href=#916 id=916 data-nosnippet>916</a>
+<a href=#917 id=917 data-nosnippet>917</a>    <span class="attr">#[cfg(feature = <span class="string">"svg_backend"</span>)]
+<a href=#918 id=918 data-nosnippet>918</a>    #[cfg_attr(doc_cfg, doc(cfg(feature = <span class="string">"svg_backend"</span>)))]
+<a href=#919 id=919 data-nosnippet>919</a>    </span><span class="kw">pub use </span>plotters_svg::SVGBackend;
+<a href=#920 id=920 data-nosnippet>920</a>}
+<a href=#921 id=921 data-nosnippet>921</a>
+<a href=#922 id=922 data-nosnippet>922</a><span class="doccomment">/// This module contains some useful re-export of backend related types.
+<a href=#923 id=923 data-nosnippet>923</a></span><span class="kw">pub mod </span>backend {
+<a href=#924 id=924 data-nosnippet>924</a>    <span class="kw">pub use </span>plotters_backend::DrawingBackend;
+<a href=#925 id=925 data-nosnippet>925</a>    <span class="attr">#[cfg(feature = <span class="string">"bitmap_backend"</span>)]
+<a href=#926 id=926 data-nosnippet>926</a>    #[cfg_attr(doc_cfg, doc(cfg(feature = <span class="string">"bitmap_backend"</span>)))]
+<a href=#927 id=927 data-nosnippet>927</a>    </span><span class="kw">pub use </span>plotters_bitmap::{
+<a href=#928 id=928 data-nosnippet>928</a>        bitmap_pixel::{BGRXPixel, PixelFormat, RGBPixel},
+<a href=#929 id=929 data-nosnippet>929</a>        BitMapBackend,
+<a href=#930 id=930 data-nosnippet>930</a>    };
+<a href=#931 id=931 data-nosnippet>931</a>    <span class="attr">#[cfg(feature = <span class="string">"svg_backend"</span>)]
+<a href=#932 id=932 data-nosnippet>932</a>    #[cfg_attr(doc_cfg, doc(cfg(feature = <span class="string">"svg_backend"</span>)))]
+<a href=#933 id=933 data-nosnippet>933</a>    </span><span class="kw">pub use </span>plotters_svg::SVGBackend;
+<a href=#934 id=934 data-nosnippet>934</a>}
+<a href=#935 id=935 data-nosnippet>935</a>
+<a href=#936 id=936 data-nosnippet>936</a><span class="attr">#[cfg(test)]
+<a href=#937 id=937 data-nosnippet>937</a></span><span class="kw">mod </span>test;</code></pre></div></section></main></body></html>

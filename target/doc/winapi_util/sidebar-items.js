@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["console","file","sysinfo"],"struct":["Handle","HandleRef"],"trait":["AsHandleRef"]};

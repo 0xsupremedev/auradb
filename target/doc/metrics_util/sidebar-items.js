@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["MetricKind"],"fn":["parse_quantiles"],"mod":["layers","registry"],"struct":["AtomicBucket","CompositeKey","DefaultHashable","Histogram","MetricKindMask","Quantile","RecoverableRecorder","Summary"],"trait":["Hashable"]};

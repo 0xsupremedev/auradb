@@ -1,0 +1,9 @@
+C:\Users\ashut\OneDrive\Documents\auradb\target\debug\deps\clap-c71d85f9dbef4696.d: C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\clap-4.5.45\src\lib.rs C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\clap-4.5.45\src\../examples/demo.rs C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\clap-4.5.45\src\../examples/demo.md
+
+C:\Users\ashut\OneDrive\Documents\auradb\target\debug\deps\libclap-c71d85f9dbef4696.rlib: C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\clap-4.5.45\src\lib.rs C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\clap-4.5.45\src\../examples/demo.rs C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\clap-4.5.45\src\../examples/demo.md
+
+C:\Users\ashut\OneDrive\Documents\auradb\target\debug\deps\libclap-c71d85f9dbef4696.rmeta: C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\clap-4.5.45\src\lib.rs C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\clap-4.5.45\src\../examples/demo.rs C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\clap-4.5.45\src\../examples/demo.md
+
+C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\clap-4.5.45\src\lib.rs:
+C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\clap-4.5.45\src\../examples/demo.rs:
+C:\Users\ashut\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\clap-4.5.45\src\../examples/demo.md:

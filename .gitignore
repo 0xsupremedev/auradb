@@ -1,0 +1,38 @@
+# Rust build artifacts
+/target/
+**/*.rs.bk
+*.pdb
+
+# Cargo
+Cargo.lock
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Benchmark databases
+benchmark_db/
+full_benchmark_db/
+ycsb_benchmark_db/
+rocksdb_comparison_db/
+
+# Documentation build
+/docs/
+
+# Environment files
+.env
+.env.local
+
+# Temporary files
+*.tmp
+*.temp

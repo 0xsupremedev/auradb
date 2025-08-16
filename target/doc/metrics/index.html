@@ -1,0 +1,185 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="A lightweight metrics facade."><title>metrics - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-84e720fa.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="metrics" data-themes="" data-resource-suffix="" data-rustdoc-version="1.89.0 (29483883e 2025-08-04)" data-channel="1.89.0" data-search-js="search-92309212.js" data-settings-js="settings-5514c975.js" ><script src="../static.files/storage-4e99c027.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-fd3af306.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-32bb7600.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../metrics/index.html">metrics</a><span class="version">0.21.1</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#overview" title="Overview">Overview</a><ul><li><a href="#metric-types-or-kinds" title="Metric types, or kinds">Metric types, or kinds</a></li><li><a href="#emission" title="Emission">Emission</a></li><li><a href="#recording" title="Recording">Recording</a></li></ul></li><li><a href="#getting-started" title="Getting Started">Getting Started</a><ul><li><a href="#in-libraries" title="In libraries">In libraries</a></li><li><a href="#in-executables" title="In executables">In executables</a></li></ul></li><li><a href="#development" title="Development">Development</a><ul><li><a href="#installing-a-basic-recorder" title="Installing a basic recorder">Installing a basic recorder</a></li><li><a href="#keys" title="Keys">Keys</a></li><li><a href="#registration" title="Registration">Registration</a></li><li><a href="#emission-1" title="Emission">Emission</a></li><li><a href="#installing-recorders" title="Installing recorders">Installing recorders</a></li></ul></li></ul><h3><a href="#modules">Crate Items</a></h3><ul class="block"><li><a href="#modules" title="Modules">Modules</a></li><li><a href="#macros" title="Macros">Macros</a></li><li><a href="#structs" title="Structs">Structs</a></li><li><a href="#enums" title="Enums">Enums</a></li><li><a href="#traits" title="Traits">Traits</a></li><li><a href="#functions" title="Functions">Functions</a></li><li><a href="#types" title="Type Aliases">Type Aliases</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Crate <span>metrics</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/metrics/lib.rs.html#1-797">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>A lightweight metrics facade.</p>
+<p>The <code>metrics</code> crate provides a single metrics API that abstracts over the actual metrics
+implementation.  Libraries can use the metrics API provided by this crate, and the consumer of
+those libraries can choose the metrics implementation that is most suitable for its use case.</p>
+<h2 id="overview"><a class="doc-anchor" href="#overview">§</a>Overview</h2>
+<p><code>metrics</code> exposes two main concepts: emitting a metric, and recording it.</p>
+<h3 id="metric-types-or-kinds"><a class="doc-anchor" href="#metric-types-or-kinds">§</a>Metric types, or kinds</h3>
+<p>This crate supports three fundamental metric types, or kinds: counters, gauges, and histograms.</p>
+<h4 id="counters"><a class="doc-anchor" href="#counters">§</a>Counters</h4>
+<p>A counter is a cumulative metric that represents a monotonically increasing value which can only
+be increased or be reset to zero on restart. For example, you might use a counter to
+represent the number of operations performed, or the number of errors that have occurred.</p>
+<p>Counters are unsigned 64-bit integers.</p>
+<p>If you have a value that goes up and down over time, consider using a gauge.</p>
+<h4 id="gauges"><a class="doc-anchor" href="#gauges">§</a>Gauges</h4>
+<p>A gauge is a metric that can go up and down, arbitrarily, over time.</p>
+<p>Gauges are typically used for measured, external values, such as temperature, throughput, or
+things like current memory usage.  Even if the value is monotonically increasing, but there is
+no way to store the delta in order to properly figure out how much to increment by, then a gauge
+might be a suitable choice.</p>
+<p>Gauges support two modes: incremental updates, or absolute updates.  This allows callers to use
+them for external measurements – where no delta can be computed – as well as internal measurements.</p>
+<p>Gauges are floating-point 64-bit numbers.</p>
+<h4 id="histograms"><a class="doc-anchor" href="#histograms">§</a>Histograms</h4>
+<p>A histogram stores an arbitrary number of observations of a specific measurement and provides
+statistical analysis over the observed values.  Typically, measurements such as request latency
+are recorded with histograms: a specific action that is repeated over and over which can have a
+varying result each time.</p>
+<p>Histograms are used to explore the distribution of values, allowing a caller to understand the
+modalities of the distribution, such as whether or not all values are grouped close together, or
+spread evenly, or even whether or not there are multiple groupings or clusters.</p>
+<p>Colloquially, histograms are usually associated with percentiles, although by definition, they
+specifically deal with bucketed or binned values: how many values fell within 0-10, how many
+fell within 11-20, and so on and so forth.  Percentiles, commonly associated with “summaries”,
+deal with understanding how much of a distribution falls below or at a particular percentage of
+that distribution: 50% of requests are slower than 500ms, 99% of requests are slower than
+2450ms, and so on and so forth.</p>
+<p>While we use the term “histogram” in <code>metrics</code>, we enforce no particular usage of true
+histograms or summaries.  The choice of output is based entirely on the exporter being used to
+ship your metric data out of your application.  For example, if you’re using
+<a href="https://docs.rs/metrics-exporter-prometheus">metrics-exporter-prometheus</a>, Prometheus supports both histograms and summaries, and the
+exporter can be configured to output our “histogram” data as either.  Other exporters may choose
+to stick to using summaries, as is traditional, in order to generate percentile data.</p>
+<p>Histograms take floating-point 64-bit numbers.</p>
+<h3 id="emission"><a class="doc-anchor" href="#emission">§</a>Emission</h3>
+<p>Metrics are emitted by utilizing the registration or emission macros.  There is a macro for
+registering and emitting each fundamental metric type:</p>
+<ul>
+<li><a href="macro.register_counter.html" title="macro metrics::register_counter"><code>register_counter!</code></a>, <a href="macro.counter.html" title="macro metrics::counter"><code>counter!</code></a>, and <a href="macro.increment_counter.html" title="macro metrics::increment_counter"><code>increment_counter!</code></a> for counters</li>
+<li><a href="macro.register_gauge.html" title="macro metrics::register_gauge"><code>register_gauge!</code></a>, <a href="macro.gauge.html" title="macro metrics::gauge"><code>gauge!</code></a>, <a href="macro.increment_gauge.html" title="macro metrics::increment_gauge"><code>increment_gauge!</code></a>, and <a href="macro.decrement_gauge.html" title="macro metrics::decrement_gauge"><code>decrement_gauge!</code></a> for gauges</li>
+<li><a href="macro.register_histogram.html" title="macro metrics::register_histogram"><code>register_histogram!</code></a> and <a href="macro.histogram.html" title="macro metrics::histogram"><code>histogram!</code></a> for histograms</li>
+</ul>
+<p>Additionally, metrics can be described – setting either the unit of measure or long-form
+description – by using the <code>describe_*</code> macros:</p>
+<ul>
+<li><a href="macro.describe_counter.html" title="macro metrics::describe_counter"><code>describe_counter!</code></a> for counters</li>
+<li><a href="macro.describe_gauge.html" title="macro metrics::describe_gauge"><code>describe_gauge!</code></a> for gauges</li>
+<li><a href="macro.describe_histogram.html" title="macro metrics::describe_histogram"><code>describe_histogram!</code></a> for histograms</li>
+</ul>
+<p>In order to register or emit a metric, you need a way to record these events, which is where
+<a href="trait.Recorder.html" title="trait metrics::Recorder"><code>Recorder</code></a> comes into play.</p>
+<h3 id="recording"><a class="doc-anchor" href="#recording">§</a>Recording</h3>
+<p>The <a href="trait.Recorder.html" title="trait metrics::Recorder"><code>Recorder</code></a> trait defines the interface between the registration/emission macros, and
+exporters, which is how we refer to concrete implementations of <a href="trait.Recorder.html" title="trait metrics::Recorder"><code>Recorder</code></a>.  The trait defines
+what the exporters are doing – recording – but ultimately exporters are sending data from your
+application to somewhere else: whether it be a third-party service or logging via standard out.
+It’s “exporting” the metric data out of your application.</p>
+<p>Each metric type is usually reserved for a specific type of use case, whether it be tracking a
+single value or allowing the summation of multiple values, and the respective macros elaborate
+more on the usage and invariants provided by each.</p>
+<h2 id="getting-started"><a class="doc-anchor" href="#getting-started">§</a>Getting Started</h2><h3 id="in-libraries"><a class="doc-anchor" href="#in-libraries">§</a>In libraries</h3>
+<p>Libraries need only include the <code>metrics</code> crate to emit metrics.  When an executable installs a
+recorder, all included crates which emitting metrics will now emit their metrics to that record,
+which allows library authors to seamless emit their own metrics without knowing or caring which
+exporter implementation is chosen, or even if one is installed.</p>
+<p>In cases where no global recorder is installed, a “noop” recorder lives in its place, which has
+an incredibly very low overhead: an atomic load and comparison.  Libraries can safely instrument
+their code without fear of ruining baseline performance.</p>
+<p>By default, a “noop” recorder is present so that the macros can work even if no exporter has
+been installed.  This recorder has extremely low overhead – a relaxed load and conditional –
+and so, practically speaking, the overhead when no exporter is installed is extremely low.  You
+can safely instrument applications knowing that you won’t pay a heavy performance cost even if
+you’re not shipping metrics.</p>
+<h4 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h4>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>metrics::{counter, histogram};
+
+<span class="kw">pub fn </span>process(query: <span class="kw-2">&amp;</span>str) -&gt; u64 {
+    <span class="kw">let </span>start = Instant::now();
+    <span class="kw">let </span>row_count = run_query(query);
+    <span class="kw">let </span>delta = start.elapsed();
+
+    <span class="macro">histogram!</span>(<span class="string">"process.query_time"</span>, delta);
+    <span class="macro">counter!</span>(<span class="string">"process.query_row_count"</span>, row_count);
+
+    row_count
+}</code></pre></div>
+<h3 id="in-executables"><a class="doc-anchor" href="#in-executables">§</a>In executables</h3>
+<p>Executables, which themselves can emit their own metrics, are intended to install a global
+recorder so that metrics can actually be recorded and exported somewhere.</p>
+<p>Initialization of the global recorder isn’t required for macros to function, but any metrics
+emitted before a global recorder is installed will not be recorded, so initialization and
+installation of an exporter should happen as early as possible in the application lifecycle.</p>
+<h4 id="warning"><a class="doc-anchor" href="#warning">§</a>Warning</h4>
+<p>The metrics system may only be initialized once.</p>
+<p>For most use cases, you’ll be using an off-the-shelf exporter implementation that hooks up to an
+existing metrics collection system, or interacts with the existing systems/processes that you use.</p>
+<p>Out of the box, some exporter implementations are available for you to use:</p>
+<ul>
+<li><a href="https://docs.rs/metrics-exporter-tcp">metrics-exporter-tcp</a> - outputs metrics to clients over TCP</li>
+<li><a href="https://docs.rs/metrics-exporter-prometheus">metrics-exporter-prometheus</a> - serves a Prometheus scrape endpoint</li>
+</ul>
+<p>You can also implement your own recorder if a suitable one doesn’t already exist.</p>
+<h2 id="development"><a class="doc-anchor" href="#development">§</a>Development</h2>
+<p>The primary interface with <code>metrics</code> is through the <a href="trait.Recorder.html" title="trait metrics::Recorder"><code>Recorder</code></a> trait, so we’ll show examples
+below of the trait and implementation notes.</p>
+<h3 id="installing-a-basic-recorder"><a class="doc-anchor" href="#installing-a-basic-recorder">§</a>Installing a basic recorder</h3>
+<p>Here’s a basic example which writes metrics in text form via the <code>log</code> crate.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="comment">// Recorders are installed by calling the [`set_recorder`] function.  Recorders should provide a
+// function that wraps the creation and installation of the recorder:
+
+</span><span class="kw">static </span>RECORDER: LogRecorder = LogRecorder;
+
+<span class="kw">pub fn </span>init() -&gt; <span class="prelude-ty">Result</span>&lt;(), SetRecorderError&gt; {
+    metrics::set_recorder(<span class="kw-2">&amp;</span>RECORDER)
+}</code></pre></div>
+<h3 id="keys"><a class="doc-anchor" href="#keys">§</a>Keys</h3>
+<p>All metrics are, in essence, the combination of a metric type and metric identifier, such as a
+histogram called “response_latency”.  You could conceivably have multiple metrics with the same
+name, so long as they are of different types.</p>
+<p>As the types are enforced/limited by the <a href="trait.Recorder.html" title="trait metrics::Recorder"><code>Recorder</code></a> trait itself, the remaining piece is the
+identifier, which we handle by using <a href="struct.Key.html" title="struct metrics::Key"><code>Key</code></a>. Keys hold both the metric name, and potentially,
+labels related to the metric. The metric name and labels are always string values.</p>
+<p>Internally, <code>metrics</code> uses a clone-on-write “smart pointer” for these values to optimize cases
+where the values are static strings, which can provide significant performance benefits.  These
+smart pointers can also hold owned <code>String</code> values, though, so users can mix and match static
+strings and owned strings without issue.</p>
+<p>Two <a href="struct.Key.html" title="struct metrics::Key"><code>Key</code></a> objects can be checked for equality and considered to point to the same metric if
+they are equal.  Equality checks both the name of the key and the labels of a key.  Labels are
+<em>not</em> sorted prior to checking for equality, but insertion order is maintained, so any <a href="struct.Key.html" title="struct metrics::Key"><code>Key</code></a>
+constructed from the same set of labels in the same order should be equal.</p>
+<p>It is an implementation detail if a recorder wishes to do an deeper equality check that ignores
+the order of labels, but practically speaking, metric emission, and thus labels, should be
+fixed in ordering in nearly all cases, and so it typically is not a problem.</p>
+<h3 id="registration"><a class="doc-anchor" href="#registration">§</a>Registration</h3>
+<p>Recorders must handle the “registration” of a metric.</p>
+<p>In practice, registration solves two potential problems: providing metadata for a metric, and
+creating an entry for a metric even though it has not been emitted yet.</p>
+<p>Callers may wish to provide a human-readable description of what the metric is, or provide the
+units the metrics uses.  Additionally, users may wish to register their metrics so that they
+show up in the output of the installed exporter even if the metrics have yet to be emitted.
+This allows callers to ensure the metrics output is stable, or allows them to expose all of the
+potential metrics a system has to offer, again, even if they have not all yet been emitted.</p>
+<p>As you can see from the trait, the registration methods treats the metadata as optional, and
+the macros allow users to mix and match whichever fields they want to provide.</p>
+<p>When a metric is registered, the expectation is that it will show up in output with a default
+value, so, for example, a counter should be initialized to zero, a histogram would have no
+values, and so on.</p>
+<h3 id="emission-1"><a class="doc-anchor" href="#emission-1">§</a>Emission</h3>
+<p>Likewise, recorders must handle the emission of metrics as well.</p>
+<p>Comparatively speaking, emission is not too different from registration: you have access to the
+same <a href="struct.Key.html" title="struct metrics::Key"><code>Key</code></a> as well as the value being emitted.</p>
+<p>For recorders which temporarily buffer or hold on to values before exporting, a typical approach
+would be to utilize atomic variables for the storage.  For counters and gauges, this can be done
+simply by using types like <a href="atomics/struct.AtomicU64.html" title="struct metrics::atomics::AtomicU64"><code>AtomicU64</code></a>.  For histograms, this can be
+slightly tricky as you must hold on to all of the distinct values.  In our helper crate,
+<a href="https://docs.rs/metrics-util"><code>metrics-util</code></a>, we’ve provided a type called <a href="https://docs.rs/metrics-util/0.5.0/metrics_util/struct.AtomicBucket.html"><code>AtomicBucket</code></a>.  For
+exporters that will want to get all of the current values in a batch, while clearing the bucket so
+that values aren’t processed again, <a href="https://docs.rs/metrics-util/0.5.0/metrics_util/struct.AtomicBucket.html">AtomicBucket</a> provides a simple interface to do so, as well as
+optimized performance on both the insertion and read side.</p>
+<p>Combined together, exporter authors can use <a href="https://docs.rs/metrics-util/0.5.0/metrics_util/enum.Handle.html"><code>Handle</code></a>, also from the <code>metrics-util</code>
+crate, which provides a consolidated type for holding metric data.  These types, and many more
+from the <code>metrics-util</code> crate, form the basis of typical exporter behavior and have been exposed
+to help you quickly build a new exporter.</p>
+<h3 id="installing-recorders"><a class="doc-anchor" href="#installing-recorders">§</a>Installing recorders</h3>
+<p>In order to actually use an exporter, it must be installed as the “global” recorder.  This is a
+static recorder that the registration and emission macros refer to behind-the-scenes.  <code>metrics</code>
+provides a few methods to do so: <a href="fn.set_recorder.html" title="fn metrics::set_recorder"><code>set_recorder</code></a> and <a href="fn.set_boxed_recorder.html" title="fn metrics::set_boxed_recorder"><code>set_boxed_recorder</code></a>.</p>
+<p>Primarily, you’ll use <a href="fn.set_boxed_recorder.html" title="fn metrics::set_boxed_recorder"><code>set_boxed_recorder</code></a> to pass a boxed version of the exporter to be
+installed.  This is due to the fact that most exporters won’t be able to be constructed
+statically.  If you could construct your exporter statically, though, then you could instead
+choose <a href="fn.set_recorder.html" title="fn metrics::set_recorder"><code>set_recorder</code></a>.</p>
+<p>As users of <code>metrics</code>, you’ll typically see exporters provide methods to install themselves that
+hide the nitty gritty details.  These methods will usually be aptly named, such as <code>install</code>.</p>
+</div></details><h2 id="modules" class="section-header">Modules<a href="#modules" class="anchor">§</a></h2><dl class="item-table"><dt><a class="mod" href="atomics/index.html" title="mod metrics::atomics">atomics</a></dt><dd>Atomic types used for metrics.</dd></dl><h2 id="macros" class="section-header">Macros<a href="#macros" class="anchor">§</a></h2><dl class="item-table"><dt><a class="macro" href="macro.absolute_counter.html" title="macro metrics::absolute_counter">absolute_<wbr>counter</a></dt><dd>Sets a counter to an absolute value.</dd><dt><a class="macro" href="macro.counter.html" title="macro metrics::counter">counter</a></dt><dd>Increments a counter.</dd><dt><a class="macro" href="macro.decrement_gauge.html" title="macro metrics::decrement_gauge">decrement_<wbr>gauge</a></dt><dd>Decrements a gauge.</dd><dt><a class="macro" href="macro.describe_counter.html" title="macro metrics::describe_counter">describe_<wbr>counter</a></dt><dd>Describes a counter.</dd><dt><a class="macro" href="macro.describe_gauge.html" title="macro metrics::describe_gauge">describe_<wbr>gauge</a></dt><dd>Describes a gauge.</dd><dt><a class="macro" href="macro.describe_histogram.html" title="macro metrics::describe_histogram">describe_<wbr>histogram</a></dt><dd>Describes a histogram.</dd><dt><a class="macro" href="macro.gauge.html" title="macro metrics::gauge">gauge</a></dt><dd>Updates a gauge.</dd><dt><a class="macro" href="macro.histogram.html" title="macro metrics::histogram">histogram</a></dt><dd>Records a histogram.</dd><dt><a class="macro" href="macro.increment_counter.html" title="macro metrics::increment_counter">increment_<wbr>counter</a></dt><dd>Increments a counter by one.</dd><dt><a class="macro" href="macro.increment_gauge.html" title="macro metrics::increment_gauge">increment_<wbr>gauge</a></dt><dd>Increments a gauge.</dd><dt><a class="macro" href="macro.register_counter.html" title="macro metrics::register_counter">register_<wbr>counter</a></dt><dd>Registers a counter.</dd><dt><a class="macro" href="macro.register_gauge.html" title="macro metrics::register_gauge">register_<wbr>gauge</a></dt><dd>Registers a gauge.</dd><dt><a class="macro" href="macro.register_histogram.html" title="macro metrics::register_histogram">register_<wbr>histogram</a></dt><dd>Registers a histogram.</dd></dl><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><dl class="item-table"><dt><a class="struct" href="struct.Counter.html" title="struct metrics::Counter">Counter</a></dt><dd>A counter.</dd><dt><a class="struct" href="struct.Gauge.html" title="struct metrics::Gauge">Gauge</a></dt><dd>A gauge.</dd><dt><a class="struct" href="struct.Histogram.html" title="struct metrics::Histogram">Histogram</a></dt><dd>A histogram.</dd><dt><a class="struct" href="struct.Key.html" title="struct metrics::Key">Key</a></dt><dd>A metric identifier.</dd><dt><a class="struct" href="struct.KeyHasher.html" title="struct metrics::KeyHasher">KeyHasher</a></dt><dd>Key-specific hashing algorithm.</dd><dt><a class="struct" href="struct.KeyName.html" title="struct metrics::KeyName">KeyName</a></dt><dd>Name component of a key.</dd><dt><a class="struct" href="struct.Label.html" title="struct metrics::Label">Label</a></dt><dd>Metadata for a metric key in the form of a key/value pair.</dd><dt><a class="struct" href="struct.NoopRecorder.html" title="struct metrics::NoopRecorder">Noop<wbr>Recorder</a></dt><dd>A no-op recorder.</dd><dt><a class="struct" href="struct.SetRecorderError.html" title="struct metrics::SetRecorderError">SetRecorder<wbr>Error</a></dt><dd>The type returned by <a href="fn.set_recorder.html" title="fn metrics::set_recorder"><code>set_recorder</code></a> if <a href="fn.set_recorder.html" title="fn metrics::set_recorder"><code>set_recorder</code></a> has already been called.</dd></dl><h2 id="enums" class="section-header">Enums<a href="#enums" class="anchor">§</a></h2><dl class="item-table"><dt><a class="enum" href="enum.GaugeValue.html" title="enum metrics::GaugeValue">Gauge<wbr>Value</a></dt><dd>Value of a gauge operation.</dd><dt><a class="enum" href="enum.Unit.html" title="enum metrics::Unit">Unit</a></dt><dd>Units for a given metric.</dd></dl><h2 id="traits" class="section-header">Traits<a href="#traits" class="anchor">§</a></h2><dl class="item-table"><dt><a class="trait" href="trait.CounterFn.html" title="trait metrics::CounterFn">Counter<wbr>Fn</a></dt><dd>A counter handler.</dd><dt><a class="trait" href="trait.GaugeFn.html" title="trait metrics::GaugeFn">GaugeFn</a></dt><dd>A gauge handler.</dd><dt><a class="trait" href="trait.HistogramFn.html" title="trait metrics::HistogramFn">Histogram<wbr>Fn</a></dt><dd>A histogram handler.</dd><dt><a class="trait" href="trait.IntoF64.html" title="trait metrics::IntoF64">IntoF64</a></dt><dd>An object which can be converted into a <code>f64</code> representation.</dd><dt><a class="trait" href="trait.IntoLabels.html" title="trait metrics::IntoLabels">Into<wbr>Labels</a></dt><dd>A value that can be converted to a vector of <a href="struct.Label.html" title="struct metrics::Label"><code>Label</code></a>s.</dd><dt><a class="trait" href="trait.Recorder.html" title="trait metrics::Recorder">Recorder</a></dt><dd>A trait for registering and recording metrics.</dd></dl><h2 id="functions" class="section-header">Functions<a href="#functions" class="anchor">§</a></h2><dl class="item-table"><dt><a class="fn" href="fn.recorder.html" title="fn metrics::recorder">recorder</a></dt><dd>Returns a reference to the recorder.</dd><dt><a class="fn" href="fn.set_boxed_recorder.html" title="fn metrics::set_boxed_recorder">set_<wbr>boxed_<wbr>recorder</a></dt><dd>Sets the global recorder to a <code>Box&lt;Recorder&gt;</code>.</dd><dt><a class="fn" href="fn.set_recorder.html" title="fn metrics::set_recorder">set_<wbr>recorder</a></dt><dd>Sets the global recorder to a <code>&amp;'static Recorder</code>.</dd><dt><a class="fn" href="fn.try_recorder.html" title="fn metrics::try_recorder">try_<wbr>recorder</a></dt><dd>Returns a reference to the recorder.</dd></dl><h2 id="types" class="section-header">Type Aliases<a href="#types" class="anchor">§</a></h2><dl class="item-table"><dt><a class="type" href="type.SharedString.html" title="type metrics::SharedString">Shared<wbr>String</a></dt><dd>An allocation-optimized string.</dd></dl></section></div></main></body></html>
